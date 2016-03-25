@@ -1,2 +1,2 @@
 # mrkyaml
-Wrappers over libtaml
+Wrappers over libyaml
