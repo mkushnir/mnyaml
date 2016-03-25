@@ -74,6 +74,7 @@
 #define YM_TRAVERSE_NODES_NF (-3)
 #define YM_CHECK_NODE_SEQ_NF (-4)
 #define YM_INIT_INVALID (-5)
+#define YM_PARSE_INTO_ERROR (-6)
 
 #ifdef __cplusplus
 extern "C" {
@@ -436,6 +437,7 @@ name ## _doc_cb(yaml_document_t *doc,                                  \
 static int                                                             \
 name ## _parse_into(int fd)                                            \
 {                                                                      \
+    int res;                                                           \
     struct {                                                           \
         int fd;                                                        \
         bytestream_t bs;                                               \
@@ -449,20 +451,17 @@ name ## _parse_into(int fd)                                            \
     if (!yaml_parser_initialize(&p)) {                                 \
         FAIL("yaml_parser_initialize");                                \
     }                                                                  \
-                                                                       \
     yaml_parser_set_input(&p, readcb, &iparams);                       \
-                                                                       \
     if (yaml_parser_load(&p, &doc)) {                                  \
-        int res;                                                       \
         struct {                                                       \
             ym_node_info_t *ninfo;                                     \
             __typeof__(co) config;                                     \
         } params = { ni, co, };                                        \
                                                                        \
         res = traverse_yaml_document(&doc, name ## _doc_cb, &params);  \
-        TRACE("res=%d", res);                                          \
         yaml_document_delete(&doc);                                    \
     } else {                                                           \
+        res = YM_PARSE_INTO_ERROR;                                     \
         TRACE("error=%s %s: %s (line %ld column %ld)",                 \
               YAML_ERROR_TYPE_STR(p.error),                            \
               p.context,                                               \
@@ -472,7 +471,7 @@ name ## _parse_into(int fd)                                            \
     }                                                                  \
     yaml_parser_delete(&p);                                            \
     bytestream_fini(&iparams.bs);                                      \
-    return 0;                                                          \
+    return res;                                                        \
 }                                                                      \
 
 
