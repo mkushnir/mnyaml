@@ -45,12 +45,12 @@ typedef struct {
             //char *b;
             array_t zxc;
             struct {
-                uint64_t bnm;
+                char bnm;
                 array_t sources;
             } vbn;
         } input;
         struct {
-            uint64_t aaa;
+            char aaa;
             double c;
         } output;
     } engine;
