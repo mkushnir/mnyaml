@@ -183,7 +183,7 @@ mycb1(ym_node_info_traverse_ctx_t *tctx,
 
     if (ninfo->str != NULL) {
         params = udata;
-        ssize_t res;
+        UNUSED ssize_t res;
         bytes_t **s;
         array_iter_t it;
         //TRACE("%s=%ld", tctx->prefix->data, ninfo->str(&params->bs, data));

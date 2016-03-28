@@ -28,7 +28,7 @@ endif
 nodist_testfoo_SOURCES = diag.c
 testfoo_SOURCES = testfoo.c
 testfoo_CFLAGS = $(DEBUG_FLAGS) -Wall -Wextra -Werror -std=c99 @_GNU_SOURCE_MACRO@ -I$(top_srcdir)/test -I$(top_srcdir)/src -I$(top_srcdir) -I$(includedir)
-testfoo_LDFLAGS = -L$(libdir) -lmrkcommon -L$(top_srcdir)/src/.libs -lmrkyaml
+testfoo_LDFLAGS = -L$(libdir) -lmrkcommon -L$(top_srcdir)/src/.libs -lmrkyaml -lyaml
 #testfoo_LDFLAGS = -L$(top_srcdir)/src/.libs -lmrkyaml
 
 diag.c diag.h: diag.txt
