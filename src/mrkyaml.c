@@ -28,7 +28,7 @@ static int ym_check_node_subs(yaml_document_t *,
                               ym_node_info_t *,
                               yaml_node_t *,
                               yaml_node_t *,
-                              void *out);
+                              void *);
 
 static void
 dump_yaml_node(yaml_document_t *doc, yaml_node_t *node)
@@ -71,7 +71,7 @@ ym_check_node_subs(yaml_document_t *doc,
                    ym_node_info_t *ninfo,
                    yaml_node_t *key,
                    yaml_node_t *value,
-                   void *out)
+                   void *data)
 {
     ym_node_info_t **nsub;
 
@@ -90,7 +90,7 @@ ym_check_node_subs(yaml_document_t *doc,
         if (strncmp((char *)key->data.scalar.value,
                     (*nsub)->name,
                     key->data.scalar.length + 1) == 0) {
-            if ((res = ym_traverse_nodes(doc, *nsub, value, out)) == 0 ||
+            if ((res = ym_traverse_nodes(doc, *nsub, value, data)) == 0 ||
                 res == YM_CHECK_NODE_NF ||
                 res == YM_TRAVERSE_NODES_NF ||
                 res == YM_CHECK_NODE_SEQ_NF ||
@@ -138,7 +138,7 @@ int
 ym_traverse_nodes(yaml_document_t *doc,
                    ym_node_info_t *ninfo,
                    yaml_node_t *node,
-                   void *out)
+                   void *data)
 {
     char *deftag;
 
@@ -167,7 +167,7 @@ ym_traverse_nodes(yaml_document_t *doc,
                 }
             }
             if (ninfo->init != NULL) {
-                if ((res = ninfo->init(out, node)) != 0) {
+                if ((res = ninfo->init(data, node)) != 0) {
                     return res;
                 }
             }
@@ -175,6 +175,7 @@ ym_traverse_nodes(yaml_document_t *doc,
                 if (strcmp(ninfo->tag, (char *)node->tag) == 0) {
                     yaml_node_item_t *p;
                     ym_node_info_t *ninfo_item;
+                    array_t *a;
 
                     ninfo_item = ninfo->subs[0];
                     if (ninfo_item == NULL) {
@@ -183,27 +184,26 @@ ym_traverse_nodes(yaml_document_t *doc,
                         return YM_CHECK_NODE_SEQ_NF;
                     }
 
+                    a = ninfo->addr(data);
                     for (p = node->data.sequence.items.start;
                          p < node->data.sequence.items.top;
                          ++p) {
                         yaml_node_t *item;
-                        array_t *a;
-                        void *out_item;
+                        void *data_item;
                         int res;
 
                         item = yaml_document_get_node(doc, *p);
-                        a = ninfo->addr(out);
                         //TRACE(FRED("a(%d)=%p"), *p, a);
-                        if ((out_item = array_incr(a)) == NULL) {
+                        if ((data_item = array_incr(a)) == NULL) {
                             FAIL("array_incr");
                         }
 
-                        //TRACE("ni=%p p=%d oi=%p", ninfo_item, *p, out_item);
+                        //TRACE("ni=%p p=%d oi=%p", ninfo_item, *p, data_item);
 
                         if ((res = ym_traverse_nodes(doc,
-                                                      ninfo_item,
-                                                      item,
-                                                      out_item)) != 0) {
+                                                     ninfo_item,
+                                                     item,
+                                                     data_item)) != 0) {
 
                             return res;
                         }
@@ -238,7 +238,7 @@ ym_traverse_nodes(yaml_document_t *doc,
                                                       ninfo,
                                                       key,
                                                       value,
-                                                      out)) != 0) {
+                                                      data)) != 0) {
 
                             return res;
                         }
@@ -266,22 +266,22 @@ ym_traverse_nodes(yaml_document_t *doc,
     }
     //TRACE("deftag=%s ninfo->tag=%s node->tag=%s", deftag, ninfo->tag, node->tag);
     if (ninfo->init != NULL) {
-        return ninfo->init(out, node);
+        return ninfo->init(data, node);
     }
     return 0;
 }
 
 
 int
-ym_node_info_fini_data(ym_node_info_t *ninfo, void *out)
+ym_node_info_fini_data(ym_node_info_t *ninfo, void *data)
 {
     int res;
     ym_node_info_t **nsub;
 
-    //TRACE("ninfo=%p fini(%p) for %s out=%p", ninfo, ninfo->fini, ninfo->name, out);
+    //TRACE("ninfo=%p fini(%p) for %s data=%p", ninfo, ninfo->fini, ninfo->name, data);
     if (strcmp(ninfo->tag, YAML_SEQ_TAG) != 0) {
         for (nsub = ninfo->subs; *nsub != NULL; ++nsub) {
-            if ((res = ym_node_info_fini_data(*nsub, out)) != 0) {
+            if ((res = ym_node_info_fini_data(*nsub, data)) != 0) {
                 return res;
             }
         }
@@ -290,10 +290,153 @@ ym_node_info_fini_data(ym_node_info_t *ninfo, void *out)
     }
     res = 0;
     if (ninfo->fini != NULL) {
-        res = ninfo->fini(out, NULL);
+        res = ninfo->fini(data, NULL);
     } else {
         //TRACE("NULL fini for %s", ninfo->name);
     }
+    return res;
+}
+
+
+void
+ym_node_info_traverse_ctx_init(ym_node_info_traverse_ctx_t *tctx,
+                               const char *nsep,
+                               const char *sub0,
+                               const char *sub1,
+                               const char *prefix)
+{
+    assert(prefix != NULL);
+    tctx->nsep = nsep;
+    tctx->sub0 = sub0;
+    tctx->sub1 = sub1;
+    tctx->prefix = bytes_new_from_str(prefix);
+}
+
+
+void
+ym_node_info_traverse_ctx_fini(ym_node_info_traverse_ctx_t *tctx)
+{
+    BYTES_DECREF(&tctx->prefix);
+}
+
+
+int
+ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
+                      ym_node_info_t *ninfo,
+                      void *data,
+                      ym_node_info_traverser_t cb,
+                      void *udata)
+{
+    int res;
+    ym_node_info_t **ni;
+    bytes_t *tmp;
+    bytes_t *saved_prefix;
+
+    assert(tctx->prefix != NULL);
+    saved_prefix = tctx->prefix;
+
+    if (strcmp(ninfo->tag, YAML_SEQ_TAG) == 0) {
+        array_t *a;
+        void *pdata;
+        array_iter_t it;
+
+
+        ni = &ninfo->subs[0];
+        a = ninfo->addr(data);
+        for (pdata = array_first(a, &it);
+             pdata != NULL;
+             pdata = array_next(a, &it)) {
+
+
+            if (ninfo->name == NULL) {
+                tmp = bytes_new_from_bytes(tctx->prefix);
+            } else {
+                if (tctx->prefix == NULL ||
+                    tctx->prefix->data[0] == '\0') {
+                    tmp = bytes_printf("%s%s%d%s",
+                                       ninfo->name,
+                                       tctx->sub0,
+                                       it.iter,
+                                       tctx->sub1);
+                } else {
+                    tmp = bytes_printf("%s%s%s%s%d%s",
+                                       tctx->prefix->data,
+                                       tctx->nsep,
+                                       ninfo->name,
+                                       tctx->sub0,
+                                       it.iter,
+                                       tctx->sub1);
+                }
+            }
+            tctx->prefix = tmp;
+
+            if ((res = ym_node_info_traverse(tctx,
+                                             *ni,
+                                             pdata,
+                                             cb,
+                                             udata)) != 0) {
+                tctx->prefix = saved_prefix;
+                BYTES_DECREF(&tmp);
+                break;
+            }
+
+            tctx->prefix = saved_prefix;
+            BYTES_DECREF(&tmp);
+        }
+
+
+    } else {
+        if (ninfo->name == NULL) {
+            tmp = bytes_new_from_bytes(tctx->prefix);
+        } else {
+            if (tctx->prefix == NULL ||
+                tctx->prefix->data[0] == '\0') {
+                tmp = bytes_printf("%s",
+                                   ninfo->name);
+            } else {
+                tmp = bytes_printf("%s%s%s",
+                                   tctx->prefix->data,
+                                   tctx->nsep,
+                                   ninfo->name);
+            }
+        }
+        tctx->prefix = tmp;
+
+        for (ni = ninfo->subs;
+             *ni != NULL;
+             ++ni) {
+            if ((res = ym_node_info_traverse(tctx,
+                                             *ni,
+                                             data,
+                                             cb,
+                                             udata)) != 0) {
+                break;
+            }
+        }
+
+        tctx->prefix = saved_prefix;
+        BYTES_DECREF(&tmp);
+    }
+
+    if (ninfo->name == NULL) {
+        tmp = bytes_new_from_bytes(tctx->prefix);
+    } else {
+        if (tctx->prefix == NULL ||
+            tctx->prefix->data[0] == '\0') {
+            tmp = bytes_printf("%s",
+                               ninfo->name);
+        } else {
+            tmp = bytes_printf("%s%s%s",
+                               tctx->prefix->data,
+                               tctx->nsep,
+                               ninfo->name);
+        }
+    }
+    tctx->prefix = tmp;
+    res = cb(tctx, ninfo, data, udata);
+    tctx->prefix = saved_prefix;
+    BYTES_DECREF(&tmp);
+
     return res;
 }
 

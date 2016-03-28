@@ -81,26 +81,42 @@ extern "C" {
 #endif
 
 
-typedef struct _node_info {
+typedef struct _ym_node_info {
     char *tag;
     char *name;
     int (*init)(void *, yaml_node_t *);
     int (*fini)(void *, yaml_node_t *);
+    ssize_t (*str)(bytestream_t *, void *);
     void *(*addr)(void *);
-    struct _node_info *subs[];
+    struct _ym_node_info *subs[];
 } ym_node_info_t;
+
+
+typedef struct _ym_node_info_traverse_ctx {
+    const char *nsep;
+    const char *sub0;
+    const char *sub1;
+    bytes_t *prefix;
+} ym_node_info_traverse_ctx_t;
+
+typedef int (*ym_node_info_traverser_t)(ym_node_info_traverse_ctx_t *,
+                                        ym_node_info_t *,
+                                        void *,
+                                        void *);
+
 
 #define YM_NAME(scope, name) _ym_ ## scope ## name
 #define YM_INIT(scope, name) _ym_ ## scope ## name ## _init
 #define YM_FINI(scope, name) _ym_ ## scope ## name ## _fini
+#define YM_STR(scope, name) _ym_ ## scope ## name ## _str
 #define YM_ADDR(scope, name) _ym_ ## scope ## name ## _addr
 
 
 #define YM_ADDR_TY(scope, name, n)     \
 static void *                          \
-YM_ADDR(scope, name)(void *out)        \
+YM_ADDR(scope, name)(void *data)       \
 {                                      \
-    YM_CONFIG_TYPE *root = out;        \
+    YM_CONFIG_TYPE *root = data;       \
     __typeof__(&root->n) v = &root->n; \
     return (void *)v;                  \
 }                                      \
@@ -108,18 +124,18 @@ YM_ADDR(scope, name)(void *out)        \
 
 #define YM_ADDR_TY0(scope, name, ty)   \
 static void *                          \
-YM_ADDR(scope, name)(void *out)        \
+YM_ADDR(scope, name)(void *data)       \
 {                                      \
-    return out;                        \
+    return data;                       \
 }                                      \
 
 
 
 #define YM_INIT_BOOL(scope, name, n)                           \
 static int                                                     \
-YM_INIT(scope, name)(void *out, yaml_node_t *node)             \
+YM_INIT(scope, name)(void *data, yaml_node_t *node)            \
 {                                                              \
-    YM_CONFIG_TYPE *root = out;                                \
+    YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
     assert(ym_can_cast_tag(node, YAML_BOOL_TAG) == 0);         \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
@@ -145,9 +161,9 @@ YM_INIT(scope, name)(void *out, yaml_node_t *node)             \
 
 #define YM_FINI_BOOL(scope, name, n)                           \
 static int                                                     \
-YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)      \
+YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)     \
 {                                                              \
-    YM_CONFIG_TYPE *root = out;                                \
+    YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
 /*    TRACE("f=%p v=%p (bool)", YM_FINI(scope, name), v);      \
     TRACE("v=%ld (bool)", (intmax_t)*v) */;                    \
@@ -156,11 +172,24 @@ YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)      \
 }                                                              \
 
 
+#define YM_STR_BOOL(scope, name, n)                    \
+static ssize_t                                         \
+YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+{                                                      \
+    YM_CONFIG_TYPE *root = data;                       \
+    __typeof__(&root->n) v = &root->n;                 \
+    return bytestream_nprintf(bs,                      \
+                              16,                      \
+                              "%s",                    \
+                              *v ? "true" : "false");  \
+}                                                      \
+
+
 #define YM_INIT_INT0(scope, name, ty)                          \
-static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
     intmax_t v = 0;                                            \
-    ty *vv = out;                                              \
+    ty *vv = data;                                             \
     char *ptr, *endptr;                                        \
     assert(ym_can_cast_tag(node, YAML_INT_TAG) == 0);          \
     /*TRACE("ptr=%s", node->data.scalar.value) */;             \
@@ -177,9 +206,9 @@ static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
 
 
 #define YM_FINI_INT0(scope, name, ty)                                  \
-static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
+static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
 {                                                                      \
-    ty *v = out;                                                       \
+    ty *v = data;                                                      \
 /*    TRACE("v=%p (int0)", v);                                         \
     TRACE("v=%ld (int0)", (intmax_t)*v); */                            \
     *v = 0;                                                            \
@@ -187,11 +216,23 @@ static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
 }                                                                      \
 
 
+#define YM_STR_INT0(scope, name, ty)                   \
+static ssize_t                                         \
+YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+{                                                      \
+    ty *v = data;                                      \
+    return bytestream_nprintf(bs,                      \
+                              32,                      \
+                              "%ld",                   \
+                              (intmax_t)*v);           \
+}                                                      \
+
+
 #define YM_INIT_INT(scope, name, n)                            \
-static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
     intmax_t v = 0;                                            \
-    YM_CONFIG_TYPE *root = out;                                \
+    YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
     assert(ym_can_cast_tag(node, YAML_INT_TAG) == 0);          \
@@ -209,9 +250,9 @@ static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
 
 
 #define YM_FINI_INT(scope, name, n)                                    \
-static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
+static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
 {                                                                      \
-    YM_CONFIG_TYPE *root = out;                                        \
+    YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
 /*    TRACE("v=%p (int)", v);                                          \
     TRACE("v=%ld (int)", (intmax_t)*v) */;                             \
@@ -220,11 +261,24 @@ static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
 }                                                                      \
 
 
+#define YM_STR_INT(scope, name, n)                     \
+static ssize_t                                         \
+YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+{                                                      \
+    YM_CONFIG_TYPE *root = data;                       \
+    __typeof__(&root->n) v = &root->n;                 \
+    return bytestream_nprintf(bs,                      \
+                              32,                      \
+                              "%ld",                   \
+                              (intmax_t)*v);           \
+}                                                      \
+
+
 #define YM_INIT_FLOAT(scope, name, n)                          \
-static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
     double v;                                                  \
-    YM_CONFIG_TYPE *root = out;                                \
+    YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
     assert(ym_can_cast_tag(node, YAML_FLOAT_TAG) == 0);        \
@@ -242,9 +296,9 @@ static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
 
 
 #define YM_FINI_FLOAT(scope, name, n)                                  \
-static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
+static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
 {                                                                      \
-    YM_CONFIG_TYPE *root = out;                                        \
+    YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
 /*    TRACE("v=%p (float)", v);                                        \
     TRACE("v=%lf (float)", (double)*v) */;                             \
@@ -253,10 +307,23 @@ static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
 }                                                                      \
 
 
+#define YM_STR_FLOAT(scope, name, n)                   \
+static ssize_t                                         \
+YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+{                                                      \
+    YM_CONFIG_TYPE *root = data;                       \
+    __typeof__(&root->n) v = &root->n;                 \
+    return bytestream_nprintf(bs,                      \
+                              32,                      \
+                              "%lf",                   \
+                              (double)*v);             \
+}                                                      \
+
+
 #define YM_INIT_STR(scope, name, n)                            \
-static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
-    YM_CONFIG_TYPE *root = out;                                \
+    YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr;                                                 \
     assert(ym_can_cast_tag(node, YAML_STR_TAG) == 0);          \
@@ -269,9 +336,9 @@ static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
 
 
 #define YM_FINI_STR(scope, name, n)                                    \
-static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
+static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
 {                                                                      \
-    YM_CONFIG_TYPE *root = out;                                        \
+    YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
 /*    TRACE("v=%p (str)", v);                                          \
     TRACE("v=%s (str)", (*v)->data) */;                                \
@@ -280,10 +347,23 @@ static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
 }                                                                      \
 
 
+#define YM_STR_STR(scope, name, n)                     \
+static ssize_t                                         \
+YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+{                                                      \
+    YM_CONFIG_TYPE *root = data;                       \
+    __typeof__(&root->n) v = &root->n;                 \
+    return bytestream_nprintf(bs,                      \
+                              32 + (*v)->sz,           \
+                              "'%s'",                  \
+                              (*v)->data);             \
+}                                                      \
+
+
 #define YM_INIT_SEQ(scope, name, n, sz, init, fini)            \
-static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
-    YM_CONFIG_TYPE *root = out;                                \
+    YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
     assert(ym_can_cast_tag(node, YAML_SEQ_TAG) == 0);          \
     /*TRACE(FRED("a(0)=%p"), v); */                            \
@@ -298,9 +378,9 @@ static int YM_INIT(scope, name)(void *out, yaml_node_t *node)  \
 
 
 #define YM_FINI_SEQ(scope, name, n)                                    \
-static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
+static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
 {                                                                      \
-    YM_CONFIG_TYPE *root = out;                                        \
+    YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
 /*    TRACE("v=%p init=%p fini=%p (seq)", v, v->init, v->fini); */     \
     array_fini(v);                                                     \
@@ -308,26 +388,43 @@ static int YM_FINI(scope, name)(void *out, UNUSED yaml_node_t *node)   \
 }                                                                      \
 
 
+#define YM_STR_SEQ(scope, name, n)                             \
+static ssize_t                                                 \
+YM_STR(scope, name)(UNUSED bytestream_t *bs, UNUSED void *data)\
+{                                                              \
+    return 0;                                                  \
+}                                                              \
+
+
 #define YM_INIT_MAP(scope, name, n)                                            \
-static int YM_INIT(scope, name)(UNUSED void *out, UNUSED yaml_node_t *node)    \
+static int YM_INIT(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)   \
 {                                                                              \
     return 0;                                                                  \
 }                                                                              \
 
 
 #define YM_FINI_MAP(scope, name, n)                                            \
-static int YM_FINI(scope, name)(UNUSED void *out, UNUSED yaml_node_t *node)    \
+static int YM_FINI(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)   \
 {                                                                              \
-/*    TRACE("v=%p (map)", out);                                                \
+/*    TRACE("v=%p (map)", data);                                               \
     TRACE("(map)") */;                                                         \
     return 0;                                                                  \
 }                                                                              \
+
+
+#define YM_STR_MAP(scope, name, n)                             \
+static ssize_t                                                 \
+YM_STR(scope, name)(UNUSED bytestream_t *bs, UNUSED void *data)\
+{                                                              \
+    return 0;                                                  \
+}                                                              \
 
 
 #define YM_PAIR_TY0(scope, t, name, ...)               \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     t,                                                 \
     #name,                                             \
+    NULL,                                              \
     NULL,                                              \
     NULL,                                              \
     NULL,                                              \
@@ -341,6 +438,7 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     #name,                                             \
     YM_INIT(scope, name),                              \
     YM_FINI(scope, name),                              \
+    YM_STR(scope, name),                               \
     YM_ADDR(scope, name),                              \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
@@ -353,6 +451,7 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
 #define YM_PAIR_BOOL(scope, name, n)           \
 YM_INIT_BOOL(scope, name, n)                   \
 YM_FINI_BOOL(scope, name, n)                   \
+YM_STR_BOOL(scope, name, n)                    \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_BOOL_TAG, name, NULL)   \
 
@@ -360,6 +459,7 @@ YM_PAIR_TY(scope, YAML_BOOL_TAG, name, NULL)   \
 #define YM_PAIR_INT0(scope, name, ty)          \
 YM_INIT_INT0(scope, name, ty)                  \
 YM_FINI_INT0(scope, name, ty)                  \
+YM_STR_INT0(scope, name, ty)                   \
 YM_ADDR_TY0(scope, name, ty)                   \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
@@ -367,6 +467,7 @@ YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 #define YM_PAIR_INT(scope, name, n)            \
 YM_INIT_INT(scope, name, n)                    \
 YM_FINI_INT(scope, name, n)                    \
+YM_STR_INT(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
@@ -374,6 +475,7 @@ YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 #define YM_PAIR_FLOAT(scope, name, n)          \
 YM_INIT_FLOAT(scope, name, n)                  \
 YM_FINI_FLOAT(scope, name, n)                  \
+YM_STR_FLOAT(scope, name, n)                   \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)  \
 
@@ -381,6 +483,7 @@ YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)  \
 #define YM_PAIR_STR(scope, name, n)            \
 YM_INIT_STR(scope, name, n)                    \
 YM_FINI_STR(scope, name, n)                    \
+YM_STR_STR(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
 
@@ -388,6 +491,7 @@ YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
 #define YM_PAIR_SEQ(scope, name, n, sz, init, fini, ...)       \
 YM_INIT_SEQ(scope, name, n, sz, init, fini)                    \
 YM_FINI_SEQ(scope, name, n)                                    \
+YM_STR_SEQ(scope, name, n)                                     \
 YM_ADDR_TY(scope, name, n)                                     \
 YM_PAIR_TY(scope, YAML_SEQ_TAG, name, __VA_ARGS__)             \
 
@@ -400,6 +504,7 @@ YM_PAIR_TY(scope, YAML_SEQ_TAG, name, __VA_ARGS__)             \
 #define YM_PAIR_MAP(scope, name, n, ...)               \
 YM_INIT_MAP(scope, name, n)                            \
 YM_FINI_MAP(scope, name, n)                            \
+YM_STR_MAP(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_MAP_TAG, name, __VA_ARGS__)     \
 
@@ -485,12 +590,24 @@ int ym_can_cast_tag(yaml_node_t *, char *);
 int ym_traverse_nodes(yaml_document_t *,
                        ym_node_info_t *,
                        yaml_node_t *,
-                       void *out);
+                       void *);
 
 int ym_node_info_fini_data(ym_node_info_t *, void *);
 int traverse_yaml_document(yaml_document_t *,
                        ym_node_traverser_t,
                        void *);
+void ym_node_info_traverse_ctx_init(ym_node_info_traverse_ctx_t *,
+                                    const char *,
+                                    const char *,
+                                    const char *,
+                                    const char *);
+void ym_node_info_traverse_ctx_fini(ym_node_info_traverse_ctx_t *);
+
+int ym_node_info_traverse(ym_node_info_traverse_ctx_t *,
+                          ym_node_info_t *,
+                          void *,
+                          ym_node_info_traverser_t,
+                          void *);
 
 #ifdef __cplusplus
 }

@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 
+#include <mrkcommon/bytestream.h>
 #include <mrkcommon/dumpm.h>
 #include <mrkcommon/util.h>
 
@@ -28,7 +29,7 @@ typedef struct {
 YM_PAIR_INT(si_, abc, abc);
 YM_PAIR_INT(si_, bcd, bcd);
 
-YM_PAIR_MAP0(, si,
+YM_PAIR_MAP0(, _si,
     &YM_NAME(si_, abc),
     &YM_NAME(si_, bcd)
 );
@@ -78,7 +79,7 @@ YM_PAIR_SEQ(vbn_, sources, engine.input.vbn.sources,
             sizeof(si_t),
             si_init,
             si_fini,
-    &YM_NAME(, si)
+    &YM_NAME(, _si)
 );
 YM_PAIR_INT(vbn_, bnm, engine.input.vbn.bnm);
 
@@ -105,12 +106,12 @@ zxc_item_fini(int *i)
     return 0;
 }
 
-YM_PAIR_INT0(, zxci, int);
+YM_PAIR_INT0(, _zxc, int);
 YM_PAIR_SEQ(input_, zxc, engine.input.zxc,
             sizeof(int),
             zxc_item_init,
             zxc_item_fini,
-            &YM_NAME(, zxci)
+            &YM_NAME(, _zxc)
 );
 
 YM_PAIR_MAP(engine_, input, engine.input,
@@ -167,13 +168,61 @@ mycb(void *udata, unsigned char *buf, size_t sz, size_t *nread)
 YM_PARSE_INTO(myconfig, mycb, &YM_NAME(, config), &the_config)
 
 
+static bytes_t _all = BYTES_INITIALIZER("all");
+
+static int
+mycb1(ym_node_info_traverse_ctx_t *tctx,
+      ym_node_info_t *ninfo,
+      void *data,
+      void *udata)
+{
+        struct {
+            bytestream_t bs;
+            array_t prefixes;
+        } *params;
+
+    if (ninfo->str != NULL) {
+        params = udata;
+        ssize_t res;
+        bytes_t **s;
+        array_iter_t it;
+        //TRACE("%s=%ld", tctx->prefix->data, ninfo->str(&params->bs, data));
+        for (s = array_first(&params->prefixes, &it);
+             s != NULL;
+             s = array_next(&params->prefixes, &it)) {
+            if (bytes_startswith(tctx->prefix, *s) || bytes_cmp(&_all, *s) == 0) {
+                bytestream_nprintf(&params->bs, 8 + tctx->prefix->sz, "%s=", tctx->prefix->data);
+                res = ninfo->str(&params->bs, data);
+                bytestream_cat(&params->bs, 2, ";\n");
+                break;
+            }
+        }
+    } else {
+        //TRACE("%s=...", tctx->prefix->data);
+    }
+    return 0;
+}
+
+
+static int
+prefixes_fini_item(bytes_t **s)
+{
+    BYTES_DECREF(s);
+    return 0;
+}
+
+
 static void
 test1(int argc, char **argv)
 {
     int fd;
     if (argc > 1) {
-        UNUSED yaml_token_t tok;
-        UNUSED yaml_event_t ev;
+        ym_node_info_traverse_ctx_t tctx;
+        struct {
+            bytestream_t bs;
+            array_t prefixes;
+        } params;
+        int i;
 
         if ((fd = open(argv[1], O_RDONLY)) == -1) {
             FAIL("open");
@@ -181,6 +230,32 @@ test1(int argc, char **argv)
 
         myconfig_parse_into(fd);
         close(fd);
+
+        //ym_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
+        ym_node_info_traverse_ctx_init(&tctx, "_", "_", "_", "");
+        bytestream_init(&params.bs, 1024);
+        array_init(&params.prefixes,
+                   sizeof(bytes_t *),
+                   0,
+                   NULL,
+                   (array_finalizer_t)prefixes_fini_item);
+        for (i = 2; i < argc; ++i) {
+            bytes_t **s;
+            if ((s = array_incr(&params.prefixes)) == NULL) {
+                FAIL("array_incr");
+            }
+            *s = bytes_new_from_str(argv[i]);
+        }
+        (void)ym_node_info_traverse(&tctx,
+                                    //&YM_NAME(, config),
+                                    &YM_NAME(config_, engine),
+                                    &the_config,
+                                    mycb1,
+                                    &params);
+        TRACEC("%s", SDATA(&params.bs, 0));
+        array_fini(&params.prefixes);
+        bytestream_fini(&params.bs);
+        ym_node_info_traverse_ctx_fini(&tctx);
 
         ym_node_info_fini_data(&YM_NAME(, config), &the_config);
     }
