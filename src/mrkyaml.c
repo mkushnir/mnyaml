@@ -19,11 +19,6 @@
 #include "diag.h"
 
 
-#ifndef NDEBUG
-const char *_malloc_options = "AJ";
-#endif
-
-
 static int ym_check_node_subs(yaml_document_t *,
                               ym_node_info_t *,
                               yaml_node_t *,
