@@ -30,6 +30,33 @@ static int ym_check_node_subs(yaml_document_t *,
                               yaml_node_t *,
                               void *);
 
+static int
+ym_name_cmp(const char *a, const char *b, size_t sz)
+{
+    size_t i;
+    int diff;
+
+    for (i = 0; i < sz; ++i) {
+        char ca, cb;
+        if (a[i] == '-' || a[i] == '.') {
+            ca = '_';
+        } else {
+            ca = a[i];
+        }
+        if (b[i] == '-' || b[i] == '.') {
+            cb = '_';
+        } else {
+            cb = b[i];
+        }
+        diff = ca - cb;
+        if (diff != 0) {
+            return diff;
+        }
+    }
+    return 0;
+}
+
+
 static void
 dump_yaml_node(yaml_document_t *doc, yaml_node_t *node)
 {
@@ -87,9 +114,10 @@ ym_check_node_subs(yaml_document_t *doc,
         int res;
 
         //TRACE("%s/%s", key->data.scalar.value, (*nsub)->name);
-        if (strncmp((char *)key->data.scalar.value,
-                    (*nsub)->name,
-                    key->data.scalar.length + 1) == 0) {
+        // XXX map "-" to "_"
+        if (ym_name_cmp((char *)key->data.scalar.value,
+                        (*nsub)->name,
+                        key->data.scalar.length + 1) == 0) {
             if ((res = ym_traverse_nodes(doc, *nsub, value, data)) == 0 ||
                 res == YM_CHECK_NODE_NF ||
                 res == YM_TRAVERSE_NODES_NF ||
