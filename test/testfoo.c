@@ -261,6 +261,7 @@ test1(int argc, char **argv)
         //ym_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
         ym_node_info_traverse_ctx_init(&tctx, "_", "_", "_", "");
         bytestream_init(&params.bs, 1024);
+        *SDATA(&params.bs, 0) = '\0';
         array_init(&params.prefixes,
                    sizeof(bytes_t *),
                    0,
