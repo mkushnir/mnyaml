@@ -99,6 +99,12 @@ typedef struct _ym_node_info_traverse_ctx {
     bytes_t *prefix;
 } ym_node_info_traverse_ctx_t;
 
+
+typedef struct _ym_enum {
+    char *_name;
+    int _value;
+} ym_enum_t;
+
 typedef int (*ym_node_info_traverser_t)(ym_node_info_traverse_ctx_t *,
                                         ym_node_info_t *,
                                         void *,
@@ -246,6 +252,29 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     /*TRACE("v=%ld", v); */                                    \
     *vv = (__typeof__(root->n))v;                              \
     return 0;                                                  \
+}                                                              \
+
+
+#define YM_INIT_ENUM(scope, name, n, v)                        \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) vv = &root->n;                        \
+    char *ptr;                                                 \
+    size_t i;                                                  \
+    assert(ym_can_cast_tag(node, YAML_INT_TAG) == 0);          \
+    /*TRACE("ptr=%s", node->data.scalar.value); */             \
+    ptr = (char *)node->data.scalar.value;                     \
+    for (i = 0; i < countof(v); ++i) {                         \
+        ym_enum_t *e;                                          \
+        e = &v[i];                                             \
+        if (strcmp(ptr, e->_name) == 0) {                      \
+            *vv = (__typeof__(root->n))e->_value;              \
+            return 0;                                          \
+        }                                                      \
+    }                                                          \
+    TRACE("enumeration is not known: %s", ptr);                \
+    return 1;                                                  \
 }                                                              \
 
 
@@ -444,6 +473,18 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
 }                                                      \
 
 
+#define YM_PAIR_TY1(scope, t, name, init, ...)         \
+UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
+    t,                                                 \
+    #name,                                             \
+    init,                                              \
+    YM_FINI(scope, name),                              \
+    YM_STR(scope, name),                               \
+    YM_ADDR(scope, name),                              \
+    {__VA_ARGS__, NULL}                                \
+}                                                      \
+
+
 #define YM_PAIR_NULL(scope, name, init)                \
     YM_PAIR_TY0(scope, YAML_NULL_TAG, name, NULL)      \
 
@@ -470,6 +511,21 @@ YM_FINI_INT(scope, name, n)                    \
 YM_STR_INT(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
+
+
+#define YM_PAIR_ENUM(scope, name, n, v)        \
+YM_INIT_ENUM(scope, name, n, v)                \
+YM_FINI_INT(scope, name, n)                    \
+YM_STR_INT(scope, name, n)                     \
+YM_ADDR_TY(scope, name, n)                     \
+YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
+
+
+#define YM_PAIR_INT1(scope, name, n, init)             \
+YM_FINI_INT(scope, name, n)                            \
+YM_STR_INT(scope, name, n)                             \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY1(scope, YAML_INT_TAG, name, init, NULL)     \
 
 
 #define YM_PAIR_FLOAT(scope, name, n)          \
