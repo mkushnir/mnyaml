@@ -35,6 +35,24 @@ YM_PAIR_MAP0(, _si,
 );
 
 
+static int
+si_init(si_t *si)
+{
+    //TRACE("si=%p", si);
+    si->abc = -1;
+    si->bcd = -2;
+    return 0;
+}
+
+
+static int
+si_fini(UNUSED si_t *si)
+{
+    //TRACE("si=%p abc=%d bcd=%d", si, si->abc, si->bcd);
+    return 0;
+}
+
+
 #undef YM_CONFIG_TYPE
 #define YM_CONFIG_TYPE myconfig_t
 
@@ -59,21 +77,45 @@ typedef struct {
 
 
 static int
-si_init(si_t *si)
+zxc_item_init(int *i)
 {
-    //TRACE("si=%p", si);
-    si->abc = -1;
-    si->bcd = -2;
+    *i = 0;
+    //TRACE();
     return 0;
 }
-
 
 static int
-si_fini(UNUSED si_t *si)
+zxc_item_fini(int *i)
 {
-    //TRACE("si=%p abc=%d bcd=%d", si, si->abc, si->bcd);
+    //TRACE("v=%d", *i);
+    *i = 0;
     return 0;
 }
+
+static void
+myconfig_init(myconfig_t *config)
+{
+    array_init(&config->engine.input.vbn.sources,
+               sizeof(si_t),
+               0,
+               (array_initializer_t)si_init,
+               (array_finalizer_t)si_fini);
+    array_init(&config->engine.input.zxc,
+               sizeof(int),
+               0,
+               (array_initializer_t)zxc_item_init,
+               (array_finalizer_t)zxc_item_fini);
+}
+
+
+static void
+myconfig_fini(myconfig_t *config)
+{
+    array_fini(&config->engine.input.vbn.sources);
+    array_fini(&config->engine.input.zxc);
+}
+
+
 
 YM_PAIR_SEQ(vbn_, sources, engine.input.vbn.sources,
             sizeof(si_t),
@@ -89,22 +131,6 @@ YM_PAIR_MAP(input_, vbn, engine.input.vbn,
 );
 YM_PAIR_STR(input_, qwe, engine.input.qwe);
 YM_PAIR_INT(input_, asd, engine.input.asd);
-
-static int
-zxc_item_init(int *i)
-{
-    *i = 0;
-    //TRACE();
-    return 0;
-}
-
-static int
-zxc_item_fini(int *i)
-{
-    //TRACE("v=%d", *i);
-    *i = 0;
-    return 0;
-}
 
 YM_PAIR_INT0(, _zxc, int);
 YM_PAIR_SEQ(input_, zxc, engine.input.zxc,
@@ -228,6 +254,7 @@ test1(int argc, char **argv)
             FAIL("open");
         }
 
+        myconfig_init(&the_config);
         myconfig_parse_into(fd);
         close(fd);
 
@@ -258,6 +285,7 @@ test1(int argc, char **argv)
         ym_node_info_traverse_ctx_fini(&tctx);
 
         ym_node_info_fini_data(&YM_NAME(, config), &the_config);
+        myconfig_fini(&the_config);
     }
 }
 

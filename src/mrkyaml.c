@@ -175,7 +175,7 @@ ym_traverse_nodes(yaml_document_t *doc,
 
     case YAML_SEQUENCE_NODE:
         {
-            int res;
+            UNUSED int res;
 
             deftag = YAML_DEFAULT_SEQUENCE_TAG;
             if (node->tag == NULL) {
@@ -189,11 +189,16 @@ ym_traverse_nodes(yaml_document_t *doc,
                     return YM_TRAVERSE_NODES_NF;
                 }
             }
+            /*
+             * XXX should not so it here
+             */
+#if 0
             if (ninfo->init != NULL) {
                 if ((res = ninfo->init(data, node)) != 0) {
                     return res;
                 }
             }
+#endif
             if (strcmp(deftag, (char *)node->tag) == 0) {
                 if (strcmp(ninfo->tag, (char *)node->tag) == 0) {
                     yaml_node_item_t *p;
