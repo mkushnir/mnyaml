@@ -70,11 +70,12 @@
  "<unknown>")                                  \
 
 
-#define YM_CHECK_NODE_NF (-2)
-#define YM_TRAVERSE_NODES_NF (-3)
-#define YM_CHECK_NODE_SEQ_NF (-4)
-#define YM_INIT_INVALID (-5)
-#define YM_PARSE_INTO_ERROR (-6)
+#define YM_CAST_TAG_NF (-2)
+#define YM_CHECK_NODE_NF (-3)
+#define YM_TRAVERSE_NODES_NF (-4)
+#define YM_CHECK_NODE_SEQ_NF (-5)
+#define YM_INIT_INVALID (-6)
+#define YM_PARSE_INTO_ERROR (-7)
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,9 +142,15 @@ YM_ADDR(scope, name)(void *data)       \
 static int                                                     \
 YM_INIT(scope, name)(void *data, yaml_node_t *node)            \
 {                                                              \
+    int res;                                                   \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
-    assert(ym_can_cast_tag(node, YAML_BOOL_TAG) == 0);         \
+    if ((res = ym_can_cast_tag(node, YAML_BOOL_TAG)) != 0) {   \
+        TRACE("expected %s found %s",                          \
+              YAML_BOOL_TAG,                                   \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     if (strcmp((char *)node->tag, YAML_STR_TAG) == 0) {        \
         if (strncasecmp((char *)node->data.scalar.value,       \
@@ -187,17 +194,23 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
     return bytestream_nprintf(bs,                      \
                               16,                      \
                               "%s",                    \
-                              *v ? "true" : "false");  \
+                              *v ? "on" : "off");      \
 }                                                      \
 
 
 #define YM_INIT_INT0(scope, name, ty)                          \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
+    int res;                                                   \
     intmax_t v = 0;                                            \
     ty *vv = data;                                             \
     char *ptr, *endptr;                                        \
-    assert(ym_can_cast_tag(node, YAML_INT_TAG) == 0);          \
+    if ((res = ym_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_INT_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
     /*TRACE("ptr=%s", node->data.scalar.value) */;             \
     ptr = (char *)node->data.scalar.value;                     \
     v = strtoimax(ptr, &endptr, 0);                            \
@@ -237,11 +250,17 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 #define YM_INIT_INT(scope, name, n)                            \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
+    int res;                                                   \
     intmax_t v = 0;                                            \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
-    assert(ym_can_cast_tag(node, YAML_INT_TAG) == 0);          \
+    if ((res = ym_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_INT_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
     v = strtoimax(ptr, &endptr, 0);                            \
@@ -258,11 +277,17 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 #define YM_INIT_ENUM(scope, name, n, en)                       \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
+    int res;                                                   \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr;                                                 \
     size_t i;                                                  \
-    assert(ym_can_cast_tag(node, YAML_INT_TAG) == 0);          \
+    if ((res = ym_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_INT_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
     for (i = 0; i < countof(en); ++i) {                        \
@@ -328,11 +353,17 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)              \
 #define YM_INIT_FLOAT(scope, name, n)                          \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
+    int res;                                                   \
     double v;                                                  \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
-    assert(ym_can_cast_tag(node, YAML_FLOAT_TAG) == 0);        \
+    if ((res = ym_can_cast_tag(node, YAML_FLOAT_TAG)) != 0) {  \
+        TRACE("expected %s found %s",                          \
+              YAML_FLOAT_TAG,                                  \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
     v = strtod(ptr, &endptr);                                  \
@@ -374,10 +405,16 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 #define YM_INIT_STR(scope, name, n)                            \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
+    int res;                                                   \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr;                                                 \
-    assert(ym_can_cast_tag(node, YAML_STR_TAG) == 0);          \
+    if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_STR_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
     BYTES_DECREF(v);                                           \
@@ -418,9 +455,15 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 #define YM_INIT_SEQ(scope, name, n, sz, init, fini)            \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
+    int res;                                                   \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
-    assert(ym_can_cast_tag(node, YAML_SEQ_TAG) == 0);          \
+    if ((res = ym_can_cast_tag(node, YAML_SEQ_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_SEQ_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
     /*TRACE(FRED("a(0)=%p"), v); */                            \
 /*    TRACE("v=%p init=%p fini=%p", v, init, fini); */         \
     array_init(v,                                              \

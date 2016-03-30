@@ -115,6 +115,7 @@ ym_check_node_subs(yaml_document_t *doc,
                         (*nsub)->name,
                         key->data.scalar.length + 1) == 0) {
             if ((res = ym_traverse_nodes(doc, *nsub, value, data)) == 0 ||
+                res == YM_CAST_TAG_NF ||
                 res == YM_CHECK_NODE_NF ||
                 res == YM_TRAVERSE_NODES_NF ||
                 res == YM_CHECK_NODE_SEQ_NF ||
@@ -123,7 +124,7 @@ ym_check_node_subs(yaml_document_t *doc,
             }
         }
     }
-    TRACEN("expect one of:");
+    TRACEN("expected one of:");
     for (nsub = ninfo->subs; *nsub != NULL; ++nsub) {
         TRACEC(" '%s'", (*nsub)->name);
     }
@@ -154,7 +155,7 @@ ym_can_cast_tag(yaml_node_t *node, char *tag)
             }
         }
     }
-    return 1;
+    return YM_CAST_TAG_NF;
 }
 
 
@@ -186,7 +187,7 @@ ym_traverse_nodes(yaml_document_t *doc,
             }
             if (strcmp(deftag, ninfo->tag) != 0) {
                 if (ym_can_cast_tag(node, ninfo->tag) != 0) {
-                    TRACE("expect tag: %s, found %s", ninfo->tag, node->tag);
+                    TRACE("expected tag: %s, found %s", ninfo->tag, node->tag);
                     return YM_TRAVERSE_NODES_NF;
                 }
             }
@@ -208,7 +209,7 @@ ym_traverse_nodes(yaml_document_t *doc,
 
                     ninfo_item = ninfo->subs[0];
                     if (ninfo_item == NULL) {
-                        TRACE("expect sequence node info for %s, got NULL",
+                        TRACE("expected sequence node info for %s, got NULL",
                               ninfo->name);
                         return YM_CHECK_NODE_SEQ_NF;
                     }
@@ -289,13 +290,17 @@ ym_traverse_nodes(yaml_document_t *doc,
 
     if (strcmp(deftag, ninfo->tag) != 0) {
         if (ym_can_cast_tag(node, ninfo->tag) != 0) {
-            TRACE("expect tag: %s, found %s", ninfo->tag, node->tag);
+            TRACE("expected tag: %s, found %s", ninfo->tag, node->tag);
             return YM_TRAVERSE_NODES_NF;
         }
     }
     //TRACE("deftag=%s ninfo->tag=%s node->tag=%s", deftag, ninfo->tag, node->tag);
     if (ninfo->init != NULL) {
-        return ninfo->init(data, node);
+        int res;
+        if ((res = ninfo->init(data, node)) != 0) {
+            TRACE("Error in '%s' initialization", ninfo->name);
+        }
+        return res;
     }
     return 0;
 }
