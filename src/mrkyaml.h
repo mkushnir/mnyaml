@@ -255,7 +255,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define YM_INIT_ENUM(scope, name, n, v)                        \
+#define YM_INIT_ENUM(scope, name, n, en)                       \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
     YM_CONFIG_TYPE *root = data;                               \
@@ -265,9 +265,9 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     assert(ym_can_cast_tag(node, YAML_INT_TAG) == 0);          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
-    for (i = 0; i < countof(v); ++i) {                         \
+    for (i = 0; i < countof(en); ++i) {                        \
         ym_enum_t *e;                                          \
-        e = &v[i];                                             \
+        e = &en[i];                                            \
         if (strcmp(ptr, e->_name) == 0) {                      \
             *vv = (__typeof__(root->n))e->_value;              \
             return 0;                                          \
@@ -301,6 +301,28 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
                               "%ld",                   \
                               (intmax_t)*v);           \
 }                                                      \
+
+
+#define YM_STR_ENUM(scope, name, n, en)                        \
+static ssize_t                                                 \
+YM_STR(scope, name)(bytestream_t *bs, void *data)              \
+{                                                              \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) v = &root->n;                         \
+    size_t i;                                                  \
+    for (i = 0; i < countof(en); ++i) {                        \
+        ym_enum_t *e;                                          \
+        e = &en[i];                                            \
+        if ((int)(*v) == e->_value) {                          \
+            return bytestream_nprintf(bs,                      \
+                                      32 + strlen(e->_name),   \
+                                      "'%s'",                  \
+                                      e->_name);               \
+        }                                                      \
+    }                                                          \
+    TRACE("enumeration is not known: %ld", (intmax_t)*v);      \
+    return 0;                                                  \
+}                                                              \
 
 
 #define YM_INIT_FLOAT(scope, name, n)                          \
@@ -358,6 +380,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     assert(ym_can_cast_tag(node, YAML_STR_TAG) == 0);          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
+    BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     /*TRACE("v=%s", (*v)->data); */                            \
     return 0;                                                  \
@@ -382,6 +405,9 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 {                                                      \
     YM_CONFIG_TYPE *root = data;                       \
     __typeof__(&root->n) v = &root->n;                 \
+    if (*v == NULL) {                                  \
+        return 0;                                      \
+    }                                                  \
     return bytestream_nprintf(bs,                      \
                               32 + (*v)->sz,           \
                               "'%s'",                  \
@@ -525,10 +551,10 @@ YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
 
-#define YM_PAIR_ENUM(scope, name, n, v)        \
-YM_INIT_ENUM(scope, name, n, v)                \
+#define YM_PAIR_ENUM(scope, name, n, en)       \
+YM_INIT_ENUM(scope, name, n, en)               \
 YM_FINI_INT(scope, name, n)                    \
-YM_STR_INT(scope, name, n)                     \
+YM_STR_ENUM(scope, name, n, en)                \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
