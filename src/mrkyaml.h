@@ -461,6 +461,18 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
 }                                                      \
 
 
+#define YM_PAIR_EXT(scope, t, name, init, fini, str, addr, ...)\
+UNUSED static ym_node_info_t YM_NAME(scope, name) = {          \
+    t,                                                         \
+    #name,                                                     \
+    init,                                                      \
+    fini,                                                      \
+    str,                                                       \
+    addr,                                                      \
+    {__VA_ARGS__, NULL}                                        \
+}                                                              \
+
+
 #define YM_PAIR_TY(scope, t, name, ...)                \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     t,                                                 \
@@ -571,7 +583,7 @@ YM_PAIR_TY(scope, YAML_MAP_TAG, name, __VA_ARGS__)     \
 
 
 
-#define YM_PARSE_INTO(name, readcb, ni, co)                            \
+#define YM_PARSE_INTO(name, ni, ty)                                    \
 static int                                                             \
 name ## _doc_cb(yaml_document_t *doc,                                  \
                 yaml_node_t *node,                                     \
@@ -580,7 +592,7 @@ name ## _doc_cb(yaml_document_t *doc,                                  \
     int res;                                                           \
     struct {                                                           \
         ym_node_info_t *ninfo;                                         \
-        __typeof__(co) config;                                         \
+        ty *config;                                                    \
     } *params = udata;                                                 \
     /*                                                                 \
      * top-level node is mapping                                       \
@@ -595,28 +607,21 @@ name ## _doc_cb(yaml_document_t *doc,                                  \
     return 0;                                                          \
                                                                        \
 }                                                                      \
-static int                                                             \
-name ## _parse_into(int fd)                                            \
+UNUSED static int                                                      \
+name ## _parse_into(ty *co, yaml_read_handler_t cb, void *udata)       \
 {                                                                      \
     int res;                                                           \
-    struct {                                                           \
-        int fd;                                                        \
-        bytestream_t bs;                                               \
-    } iparams;                                                         \
     yaml_parser_t p;                                                   \
     yaml_document_t doc;                                               \
-                                                                       \
-    bytestream_init(&iparams.bs, 1024);                                \
-    iparams.fd = fd;                                                   \
                                                                        \
     if (!yaml_parser_initialize(&p)) {                                 \
         FAIL("yaml_parser_initialize");                                \
     }                                                                  \
-    yaml_parser_set_input(&p, readcb, &iparams);                       \
+    yaml_parser_set_input(&p, cb, udata);                              \
     if (yaml_parser_load(&p, &doc)) {                                  \
         struct {                                                       \
             ym_node_info_t *ninfo;                                     \
-            __typeof__(co) config;                                     \
+            ty *config;                                                \
         } params = { ni, co, };                                        \
                                                                        \
         res = traverse_yaml_document(&doc, name ## _doc_cb, &params);  \
@@ -631,9 +636,9 @@ name ## _parse_into(int fd)                                            \
               p.problem_mark.column);                                  \
     }                                                                  \
     yaml_parser_delete(&p);                                            \
-    bytestream_fini(&iparams.bs);                                      \
     return res;                                                        \
 }                                                                      \
+
 
 
 
@@ -664,6 +669,13 @@ int ym_node_info_traverse(ym_node_info_traverse_ctx_t *,
                           void *,
                           ym_node_info_traverser_t,
                           void *);
+
+typedef struct _ym_read_params {
+    bytestream_t bs;
+    int fd;
+} ym_read_params_t;
+int ym_readfd(void *, unsigned char *, size_t, size_t *);
+int ym_readbs(void *, unsigned char *, size_t, size_t *);
 
 #ifdef __cplusplus
 }

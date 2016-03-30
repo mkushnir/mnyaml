@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <string.h>
 #include <sys/types.h>
 
 #include <yaml.h>
@@ -484,6 +485,43 @@ traverse_yaml_document(yaml_document_t *doc,
         }
     }
     return 0;
+}
+
+
+int
+ym_readfd(void *udata, unsigned char *buf, size_t sz, size_t *nread)
+{
+    ym_read_params_t *params = udata;
+    ssize_t n;
+    int res;
+
+    n = read(params->fd, buf, sz);
+    if (n >= 0) {
+        res = 1;
+        *nread = n;
+    } else {
+        res = 0;
+        *nread = 0;
+    }
+    return res;
+}
+
+
+int
+ym_readbs(void *udata, unsigned char *buf, size_t sz, size_t *nread)
+{
+    ym_read_params_t *params = udata;
+    ssize_t n;
+
+    n = params->bs.read_more(&params->bs, params->fd, sz);
+    if (n > 0) {
+        memcpy(buf, SPDATA(&params->bs), n);
+        SADVANCEPOS(&params->bs, n);
+        *nread = n;
+    } else {
+        *nread = 0;
+    }
+    return 1;
 }
 
 

@@ -167,31 +167,7 @@ YM_PAIR_MAP0(, config,
 myconfig_t the_config;
 
 
-static int
-mycb(void *udata, unsigned char *buf, size_t sz, size_t *nread)
-{
-    ssize_t n;
-    int res;
-
-    struct {
-        int fd;
-        bytestream_t bs;
-    } *params = udata;
-
-    //TRACE("need %ld to read", sz);
-    n = read(params->fd, buf, sz);
-    if (n >= 0) {
-        res = 1;
-        *nread = n;
-    } else {
-        res = 0;
-        *nread = 0;
-    }
-    return res;
-}
-
-
-YM_PARSE_INTO(myconfig, mycb, &YM_NAME(, config), &the_config)
+YM_PARSE_INTO(myconfig, &YM_NAME(, config), myconfig_t)
 
 
 static bytes_t _all = BYTES_INITIALIZER("all");
@@ -241,35 +217,35 @@ prefixes_fini_item(bytes_t **s)
 static void
 test1(int argc, char **argv)
 {
-    int fd;
     if (argc > 1) {
         ym_node_info_traverse_ctx_t tctx;
+        ym_read_params_t rparams;
         struct {
             bytestream_t bs;
             array_t prefixes;
-        } params;
+        } pparams;
         int i;
 
-        if ((fd = open(argv[1], O_RDONLY)) == -1) {
+        if ((rparams.fd = open(argv[1], O_RDONLY)) == -1) {
             FAIL("open");
         }
 
         myconfig_init(&the_config);
-        myconfig_parse_into(fd);
-        close(fd);
+        myconfig_parse_into(&the_config, ym_readfd, &rparams);
+        close(rparams.fd);
 
         //ym_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
         ym_node_info_traverse_ctx_init(&tctx, "_", "_", "_", "");
-        bytestream_init(&params.bs, 1024);
-        *SDATA(&params.bs, 0) = '\0';
-        array_init(&params.prefixes,
+        bytestream_init(&pparams.bs, 1024);
+        *SDATA(&pparams.bs, 0) = '\0';
+        array_init(&pparams.prefixes,
                    sizeof(bytes_t *),
                    0,
                    NULL,
                    (array_finalizer_t)prefixes_fini_item);
         for (i = 2; i < argc; ++i) {
             bytes_t **s;
-            if ((s = array_incr(&params.prefixes)) == NULL) {
+            if ((s = array_incr(&pparams.prefixes)) == NULL) {
                 FAIL("array_incr");
             }
             *s = bytes_new_from_str(argv[i]);
@@ -279,10 +255,10 @@ test1(int argc, char **argv)
                                     &YM_NAME(config_, engine),
                                     &the_config,
                                     mycb1,
-                                    &params);
-        TRACEC("%s", SDATA(&params.bs, 0));
-        array_fini(&params.prefixes);
-        bytestream_fini(&params.bs);
+                                    &pparams);
+        TRACEC("%s", SDATA(&pparams.bs, 0));
+        array_fini(&pparams.prefixes);
+        bytestream_fini(&pparams.bs);
         ym_node_info_traverse_ctx_fini(&tctx);
 
         ym_node_info_fini_data(&YM_NAME(, config), &the_config);
