@@ -276,6 +276,13 @@ ym_traverse_nodes(yaml_document_t *doc,
                 }
             }
         }
+        if (ninfo->init != NULL) {
+            int res;
+            if ((res = ninfo->init(data, node)) != 0) {
+                TRACE("Error in '%s' initialization", ninfo->name);
+            }
+            return res;
+        }
         return 0;
 
     default:

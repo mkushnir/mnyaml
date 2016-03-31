@@ -964,6 +964,18 @@ YM_PAIR_TY(scope, YAML_MAP_TAG, name, __VA_ARGS__)     \
     YM_PAIR_TY0(scope, YAML_MAP_TAG, name, __VA_ARGS__)\
 
 
+#define YM_PAIR_MAP_EXT(scope, name, init, fini, str, addr, ...)       \
+UNUSED static ym_node_info_t YM_NAME(scope, name) = {                  \
+    YAML_MAP_TAG,                                                      \
+    #name,                                                             \
+    init,                                                              \
+    fini,                                                              \
+    str,                                                               \
+    addr,                                                              \
+    {__VA_ARGS__, NULL}                                                \
+}                                                                      \
+
+
 
 
 #define YM_PARSE_INTO(name, ni, ty)                                    \
