@@ -324,7 +324,7 @@ ym_node_info_fini_data(ym_node_info_t *ninfo, void *data)
     }
     res = 0;
     if (ninfo->fini != NULL) {
-        res = ninfo->fini(data, NULL);
+        res = ninfo->fini(data);
     } else {
         //TRACE("NULL fini for %s", ninfo->name);
     }

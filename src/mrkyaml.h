@@ -86,7 +86,7 @@ typedef struct _ym_node_info {
     char *tag;
     char *name;
     int (*init)(void *, yaml_node_t *);
-    int (*fini)(void *, yaml_node_t *);
+    int (*fini)(void *);
     ssize_t (*str)(bytestream_t *, void *);
     void *(*addr)(void *);
     struct _ym_node_info *subs[];
@@ -174,7 +174,7 @@ YM_INIT(scope, name)(void *data, yaml_node_t *node)            \
 
 #define YM_FINI_BOOL(scope, name, n)                           \
 static int                                                     \
-YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)     \
+YM_FINI(scope, name)(void *data)                               \
 {                                                              \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
@@ -225,7 +225,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 
 
 #define YM_FINI_INT0(scope, name, ty)                                  \
-static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
+static int YM_FINI(scope, name)(void *data)                            \
 {                                                                      \
     ty *v = data;                                                      \
 /*    TRACE("v=%p (int0)", v);                                         \
@@ -304,7 +304,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 
 
 #define YM_FINI_INT(scope, name, n)                                    \
-static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
+static int YM_FINI(scope, name)(void *data)                            \
 {                                                                      \
     YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
@@ -378,7 +378,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 
 
 #define YM_FINI_FLOAT(scope, name, n)                                  \
-static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
+static int YM_FINI(scope, name)(void *data)                            \
 {                                                                      \
     YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
@@ -425,7 +425,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 
 
 #define YM_FINI_STR(scope, name, n)                                    \
-static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
+static int YM_FINI(scope, name)(void *data)                            \
 {                                                                      \
     YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
@@ -476,7 +476,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 
 
 #define YM_FINI_SEQ(scope, name, n)                                    \
-static int YM_FINI(scope, name)(void *data, UNUSED yaml_node_t *node)  \
+static int YM_FINI(scope, name)(void *data)                            \
 {                                                                      \
     YM_CONFIG_TYPE *root = data;                                       \
     __typeof__(&root->n) v = &root->n;                                 \
@@ -502,7 +502,7 @@ static int YM_INIT(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)   \
 
 
 #define YM_FINI_MAP(scope, name, n)                                            \
-static int YM_FINI(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)   \
+static int YM_FINI(scope, name)(UNUSED void *data)                             \
 {                                                                              \
 /*    TRACE("v=%p (map)", data);                                               \
     TRACE("(map)") */;                                                         \
