@@ -21,7 +21,7 @@ then
     export LDFLAGS="-L$HOME/lib -L/usr/local/lib"
     export CFLAGS="-I$HOME/include -I/usr/local/include"
     autoreconf --force
-    ./configure --prefix=$HOME --enable-debug
+    ./configure --enable-debug
 
 elif test "$1" = "dev-ndebug"
 then

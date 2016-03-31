@@ -290,7 +290,7 @@ ym_traverse_nodes(yaml_document_t *doc,
 
     if (strcmp(deftag, ninfo->tag) != 0) {
         if (ym_can_cast_tag(node, ninfo->tag) != 0) {
-            TRACE("expected tag: %s, found %s", ninfo->tag, node->tag);
+            TRACE("node %s expected tag: %s, found %s", ninfo->name, ninfo->tag, node->tag);
             return YM_TRAVERSE_NODES_NF;
         }
     }
