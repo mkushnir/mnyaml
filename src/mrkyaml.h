@@ -1,6 +1,7 @@
 #ifndef MRKYAML_H_DEFINED
 #define MRKYAML_H_DEFINED
 
+#include <libgen.h>
 #include <yaml.h>
 
 #include <mrkcommon/array.h>
@@ -274,6 +275,40 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
+#define YM_INIT_INT_CEHCKRANGE(scope, name, n, a, b)           \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    intmax_t v = 0;                                            \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) vv = &root->n;                        \
+    char *ptr, *endptr;                                        \
+    if ((res = ym_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_INT_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    /*TRACE("ptr=%s", node->data.scalar.value); */             \
+    ptr = (char *)node->data.scalar.value;                     \
+    v = strtoimax(ptr, &endptr, 0);                            \
+    if (ptr == endptr) {                                       \
+        TRACE("invalid int '%s'", ptr);                        \
+        return YM_INIT_INVALID;                                \
+    }                                                          \
+    if ((v < a) || (v > b)) {                                  \
+        TRACE("int '%s' is out of range %ld..%ld",             \
+              ptr,                                             \
+              (intmax_t)a,                                     \
+              (intmax_t)b);                                    \
+        return YM_INIT_INVALID;                                \
+    }                                                          \
+    /*TRACE("v=%ld", v); */                                    \
+    *vv = (__typeof__(root->n))v;                              \
+    return 0;                                                  \
+}                                                              \
+
+
 #define YM_INIT_ENUM(scope, name, n, en)                       \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -299,7 +334,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
         }                                                      \
     }                                                          \
     TRACE("enumeration is not known: %s", ptr);                \
-    return 1;                                                  \
+    return YM_INIT_INVALID;                                    \
 }                                                              \
 
 
@@ -377,6 +412,40 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
+#define YM_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)         \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    double v;                                                  \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) vv = &root->n;                        \
+    char *ptr, *endptr;                                        \
+    if ((res = ym_can_cast_tag(node, YAML_FLOAT_TAG)) != 0) {  \
+        TRACE("expected %s found %s",                          \
+              YAML_FLOAT_TAG,                                  \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    /*TRACE("ptr=%s", node->data.scalar.value); */             \
+    ptr = (char *)node->data.scalar.value;                     \
+    v = strtod(ptr, &endptr);                                  \
+    if (ptr == endptr) {                                       \
+        TRACE("invalid float '%s'", ptr);                      \
+        return YM_INIT_INVALID;                                \
+    }                                                          \
+    if ((v < a) || (v > b)) {                                  \
+        TRACE("float '%s' is out of range %lf..%lf",           \
+              ptr,                                             \
+              (double)a,                                       \
+              (double)b);                                      \
+        return YM_INIT_INVALID;                                \
+    }                                                          \
+    /*TRACE("v=%lf", v); */                                    \
+    *vv = (__typeof__(root->n))v;                              \
+    return 0;                                                  \
+}                                                              \
+
+
 #define YM_FINI_FLOAT(scope, name, n)                                  \
 static int YM_FINI(scope, name)(void *data)                            \
 {                                                                      \
@@ -417,6 +486,195 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     }                                                          \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
+    BYTES_DECREF(v);                                           \
+    *v = bytes_new_from_str(ptr);                              \
+    /*TRACE("v=%s", (*v)->data); */                            \
+    return 0;                                                  \
+}                                                              \
+
+
+#define YM_INIT_STR_CHECKDIRNAME(scope, name, n)               \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    struct stat sb;                                            \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) v = &root->n;                         \
+    char *ptr, *d;                                             \
+    if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_STR_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    ptr = (char *)node->data.scalar.value;                     \
+    /*TRACE("ptr=%s", ptr); */                                 \
+    if (*ptr != '\0') {                                        \
+        if ((d = dirname(ptr)) == NULL) {                      \
+            TRACE("Could not get dirname from %s", ptr);       \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+        if (stat(d, &sb) != 0) {                               \
+            TRACE("Could not stat %s", d);                     \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+        if (!S_ISDIR(sb.st_mode)) {                            \
+            TRACE("Not a directory %s", d);                    \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+    }                                                          \
+    BYTES_DECREF(v);                                           \
+    *v = bytes_new_from_str(ptr);                              \
+    /*TRACE("v=%s", (*v)->data); */                            \
+    return 0;                                                  \
+}                                                              \
+
+
+#define YM_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)    \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    struct stat sb;                                            \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) v = &root->n;                         \
+    char *ptr, *d;                                             \
+    if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_STR_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    ptr = (char *)node->data.scalar.value;                     \
+    /*TRACE("ptr=%s", ptr); */                                 \
+    if (*ptr != '\0') {                                        \
+        if ((d = dirname(ptr)) == NULL) {                      \
+            TRACE("Could not get dirname from %s", ptr);       \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+        if (stat(d, &sb) == 0) {                               \
+            if (S_ISDIR(sb.st_mode)) {                         \
+                goto end;                                      \
+            } else {                                           \
+                TRACE("Not a directory %s", d);                \
+                return YM_INIT_INVALID;                        \
+            }                                                  \
+        } else {                                               \
+            if (mkdir(d, 0755) == 0) {                         \
+                goto end;                                      \
+            } else {                                           \
+                TRACE("Could not mkdir %s", d);                \
+                return YM_INIT_INVALID;                        \
+            }                                                  \
+        }                                                      \
+    }                                                          \
+end:                                                           \
+    BYTES_DECREF(v);                                           \
+    *v = bytes_new_from_str(ptr);                              \
+    /*TRACE("v=%s", (*v)->data); */                            \
+    return 0;                                                  \
+}                                                              \
+
+
+#define YM_INIT_STR_CHECKFILE(scope, name, n)                  \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    struct stat sb;                                            \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) v = &root->n;                         \
+    char *ptr;                                                 \
+    if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_STR_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    ptr = (char *)node->data.scalar.value;                     \
+    /*TRACE("ptr=%s", ptr); */                                 \
+    if (*ptr != '\0') {                                        \
+        if (stat(ptr, &sb) != 0) {                             \
+            TRACE("Could not stat %s", ptr);                   \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+        if (!S_ISREG(sb.st_mode)) {                            \
+            TRACE("Not a regular file %s", ptr);               \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+    }                                                          \
+    BYTES_DECREF(v);                                           \
+    *v = bytes_new_from_str(ptr);                              \
+    /*TRACE("v=%s", (*v)->data); */                            \
+    return 0;                                                  \
+}                                                              \
+
+
+#define YM_INIT_STR_CHECKDIR(scope, name, n)                   \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    struct stat sb;                                            \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) v = &root->n;                         \
+    char *ptr;                                                 \
+    if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_STR_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    ptr = (char *)node->data.scalar.value;                     \
+    /*TRACE("ptr=%s", ptr); */                                 \
+    if (*ptr != '\0') {                                        \
+        if (stat(ptr, &sb) != 0) {                             \
+            TRACE("Could not stat %s", ptr);                   \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+        if (!S_ISDIR(sb.st_mode)) {                            \
+            TRACE("Not a directory %s", ptr);                  \
+            return YM_INIT_INVALID;                            \
+        }                                                      \
+    }                                                          \
+    BYTES_DECREF(v);                                           \
+    *v = bytes_new_from_str(ptr);                              \
+    /*TRACE("v=%s", (*v)->data); */                            \
+    return 0;                                                  \
+}                                                              \
+
+
+#define YM_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)        \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    struct stat sb;                                            \
+    YM_CONFIG_TYPE *root = data;                               \
+    __typeof__(&root->n) v = &root->n;                         \
+    char *ptr;                                                 \
+    if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_STR_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    ptr = (char *)node->data.scalar.value;                     \
+    /*TRACE("ptr=%s", ptr); */                                 \
+    if (*ptr != '\0') {                                        \
+        if (stat(ptr, &sb) == 0) {                             \
+            if (S_ISDIR(sb.st_mode)) {                         \
+                goto end;                                      \
+            } else {                                           \
+                TRACE("Not a directory %s", ptr);              \
+                return YM_INIT_INVALID;                        \
+            }                                                  \
+        } else {                                               \
+            if (mkdir(ptr, 0755) == 0) {                       \
+                goto end;                                      \
+            } else {                                           \
+                TRACE("Could not mkdir %s", ptr);              \
+                return YM_INIT_INVALID;                        \
+            }                                                  \
+        }                                                      \
+    }                                                          \
+end:                                                           \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     /*TRACE("v=%s", (*v)->data); */                            \
@@ -594,6 +852,14 @@ YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
 
+#define YM_PAIR_INT_CHECKRANGE(scope, name, n, a, b)   \
+YM_INIT_INT_CHECKRANGE(scope, name, n, a, b)           \
+YM_FINI_INT(scope, name, n)                            \
+YM_STR_INT(scope, name, n)                             \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)            \
+
+
 #define YM_PAIR_ENUM(scope, name, n, en)       \
 YM_INIT_ENUM(scope, name, n, en)               \
 YM_FINI_INT(scope, name, n)                    \
@@ -617,12 +883,60 @@ YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)  \
 
 
+#define YM_PAIR_FLOAT_CHECKRANGE(scope, name, n, a, b) \
+YM_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)         \
+YM_FINI_FLOAT(scope, name, n)                          \
+YM_STR_FLOAT(scope, name, n)                           \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)          \
+
+
 #define YM_PAIR_STR(scope, name, n)            \
 YM_INIT_STR(scope, name, n)                    \
 YM_FINI_STR(scope, name, n)                    \
 YM_STR_STR(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
+
+
+#define YM_PAIR_STR_CHECKDIRNAME(scope, name, n)       \
+YM_INIT_STR_CHECKDIRNAME(scope, name, n)               \
+YM_FINI_STR(scope, name, n)                            \
+YM_STR_STR(scope, name, n)                             \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
+
+
+#define YM_PAIR_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)    \
+YM_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)            \
+YM_FINI_STR(scope, name, n)                                    \
+YM_STR_STR(scope, name, n)                                     \
+YM_ADDR_TY(scope, name, n)                                     \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)                    \
+
+
+#define YM_PAIR_STR_CHECKFILE(scope, name, n)  \
+YM_INIT_STR_CHECKFILE(scope, name, n)          \
+YM_FINI_STR(scope, name, n)                    \
+YM_STR_STR(scope, name, n)                     \
+YM_ADDR_TY(scope, name, n)                     \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
+
+
+#define YM_PAIR_STR_CHECKDIR(scope, name, n)           \
+YM_INIT_STR_CHECKDIR(scope, name, n)                   \
+YM_FINI_STR(scope, name, n)                            \
+YM_STR_STR(scope, name, n)                             \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
+
+
+#define YM_PAIR_STR_CHECKDIR_AUTOCREATE(scope, name, n)\
+YM_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)        \
+YM_FINI_STR(scope, name, n)                            \
+YM_STR_STR(scope, name, n)                             \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
 
 
 #define YM_PAIR_SEQ(scope, name, n, sz, init, fini, ...)       \
