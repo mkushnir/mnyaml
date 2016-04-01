@@ -868,7 +868,7 @@ YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
 
-#define YM_PAIR_INT1(scope, name, n, init)             \
+#define YM_PAIR_INT_EXT(scope, name, n, init)          \
 YM_FINI_INT(scope, name, n)                            \
 YM_STR_INT(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
