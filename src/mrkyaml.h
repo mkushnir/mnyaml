@@ -488,6 +488,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     ptr = (char *)node->data.scalar.value;                     \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
+    BYTES_INCREF(*v);                                          \
     /*TRACE("v=%s", (*v)->data); */                            \
     return 0;                                                  \
 }                                                              \
@@ -525,6 +526,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     }                                                          \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
+    BYTES_INCREF(*v);                                          \
     /*TRACE("v=%s", (*v)->data); */                            \
     return 0;                                                  \
 }                                                              \
@@ -570,6 +572,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 end:                                                           \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
+    BYTES_INCREF(*v);                                          \
     /*TRACE("v=%s", (*v)->data); */                            \
     return 0;                                                  \
 }                                                              \
@@ -603,6 +606,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     }                                                          \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
+    BYTES_INCREF(*v);                                          \
     /*TRACE("v=%s", (*v)->data); */                            \
     return 0;                                                  \
 }                                                              \
@@ -636,6 +640,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     }                                                          \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
+    BYTES_INCREF(*v);                                          \
     /*TRACE("v=%s", (*v)->data); */                            \
     return 0;                                                  \
 }                                                              \
@@ -677,6 +682,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 end:                                                           \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
+    BYTES_INCREF(*v);                                          \
     /*TRACE("v=%s", (*v)->data); */                            \
     return 0;                                                  \
 }                                                              \
