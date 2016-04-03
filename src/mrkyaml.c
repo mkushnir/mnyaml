@@ -376,6 +376,7 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
     assert(tctx->prefix != NULL);
     saved_prefix = tctx->prefix;
 
+    res = 0;
     if (strcmp(ninfo->tag, YAML_SEQ_TAG) == 0) {
         array_t *a;
         void *pdata;
@@ -425,7 +426,6 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
             BYTES_DECREF(&tmp);
         }
 
-
     } else {
         if (ninfo->name == NULL) {
             tmp = bytes_new_from_bytes(tctx->prefix);
@@ -443,9 +443,7 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
         }
         tctx->prefix = tmp;
 
-        for (ni = ninfo->subs;
-             *ni != NULL;
-             ++ni) {
+        for (ni = ninfo->subs; *ni != NULL; ++ni) {
             if ((res = ym_node_info_traverse(tctx,
                                              *ni,
                                              data,
@@ -459,27 +457,113 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
         BYTES_DECREF(&tmp);
     }
 
-    if (ninfo->name == NULL) {
-        tmp = bytes_new_from_bytes(tctx->prefix);
-    } else {
-        if (tctx->prefix == NULL ||
-            tctx->prefix->data[0] == '\0') {
-            tmp = bytes_printf("%s",
-                               ninfo->name);
+    if (res == 0) {
+        if (ninfo->name == NULL) {
+            tmp = bytes_new_from_bytes(tctx->prefix);
         } else {
-            tmp = bytes_printf("%s%s%s",
-                               tctx->prefix->data,
-                               tctx->nsep,
-                               ninfo->name);
+            if (tctx->prefix == NULL ||
+                tctx->prefix->data[0] == '\0') {
+                tmp = bytes_printf("%s",
+                                   ninfo->name);
+            } else {
+                tmp = bytes_printf("%s%s%s",
+                                   tctx->prefix->data,
+                                   tctx->nsep,
+                                   ninfo->name);
+            }
         }
+        tctx->prefix = tmp;
+        res = cb(tctx, ninfo, data, udata);
+        tctx->prefix = saved_prefix;
+        BYTES_DECREF(&tmp);
     }
-    tctx->prefix = tmp;
-    res = cb(tctx, ninfo, data, udata);
-    tctx->prefix = saved_prefix;
-    BYTES_DECREF(&tmp);
 
     return res;
 }
+
+
+int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *tctx,
+                           ym_node_info_t *ninfo,
+                           void *a,
+                           void *b,
+                           ym_node_info_traverser2_t cb,
+                           void *udata) {
+    int res;
+    ym_node_info_t **ni;
+
+    res = 0;
+    if (strcmp(ninfo->tag, YAML_SEQ_TAG) == 0) {
+        array_t *ara, *arb;
+        void *pa, *pb;
+        array_iter_t it;
+
+        ni = &ninfo->subs[0];
+        ara = ninfo->addr(a);
+        arb = ninfo->addr(b);
+
+        for (pa = array_first(ara, &it);
+             pa != NULL;
+             pa = array_next(ara, &it)) {
+            pb = array_get(arb, it.iter);
+            if (pb == NULL) {
+                break;
+            }
+            if ((res = ym_node_info_traverse2(tctx,
+                                              *ni,
+                                              pa,
+                                              pb,
+                                              cb,
+                                              udata)) != 0) {
+                break;
+            }
+        }
+    } else {
+        for (ni = ninfo->subs; *ni != NULL; ++ni) {
+            if ((res = ym_node_info_traverse2(tctx,
+                                              *ni,
+                                              a,
+                                              b,
+                                              cb,
+                                              udata)) != 0) {
+                break;
+            }
+        }
+    }
+
+    if (res == 0) {
+        res = cb(tctx, ninfo, a, b, udata);
+    }
+
+    return res;
+}
+
+static int
+cmp_cb(UNUSED ym_node_info_traverse_ctx_t *tctx,
+       ym_node_info_t *ninfo,
+       void *a,
+       void *b,
+       UNUSED void *udata)
+{
+    if (ninfo->cmp != NULL) {
+        return ninfo->cmp(a, b);
+    }
+    return 0;
+}
+
+
+int
+ym_node_info_cmp_data(ym_node_info_t *ninfo, void *a, void *b)
+{
+    ym_node_info_traverse_ctx_t tctx;
+    int res;
+
+    ym_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
+    res = ym_node_info_traverse2(&tctx, ninfo, a, b, cmp_cb, NULL);
+    ym_node_info_traverse_ctx_fini(&tctx);
+    return res;
+}
+
+
 
 
 int

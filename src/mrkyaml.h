@@ -89,6 +89,7 @@ typedef struct _ym_node_info {
     int (*init)(void *, yaml_node_t *);
     int (*fini)(void *);
     ssize_t (*str)(bytestream_t *, void *);
+    int (*cmp)(void *, void *);
     void *(*addr)(void *);
     struct _ym_node_info *subs[];
 } ym_node_info_t;
@@ -112,11 +113,17 @@ typedef int (*ym_node_info_traverser_t)(ym_node_info_traverse_ctx_t *,
                                         void *,
                                         void *);
 
+typedef int (*ym_node_info_traverser2_t)(ym_node_info_traverse_ctx_t *,
+                                        ym_node_info_t *,
+                                        void *,
+                                        void *,
+                                        void *);
 
 #define YM_NAME(scope, name) _ym_ ## scope ## name
 #define YM_INIT(scope, name) _ym_ ## scope ## name ## _init
 #define YM_FINI(scope, name) _ym_ ## scope ## name ## _fini
 #define YM_STR(scope, name) _ym_ ## scope ## name ## _str
+#define YM_CMP(scope, name) _ym_ ## scope ## name ## _cmp
 #define YM_ADDR(scope, name) _ym_ ## scope ## name ## _addr
 
 
@@ -199,6 +206,16 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 }                                                      \
 
 
+#define YM_CMP_BOOL(scope, name, n)                    \
+static int                                             \
+YM_CMP(scope, name)(void *a, void *b)                  \
+{                                                      \
+    YM_CONFIG_TYPE *ra = a;                            \
+    YM_CONFIG_TYPE *rb = b;                            \
+    return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
+}                                                      \
+
+
 #define YM_INIT_INT0(scope, name, ty)                          \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -245,6 +262,16 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
                               32,                      \
                               "%ld",                   \
                               (intmax_t)*v);           \
+}                                                      \
+
+
+#define YM_CMP_INT0(scope, name, ty)                   \
+static int                                             \
+YM_CMP(scope, name)(void *a, void *b)                  \
+{                                                      \
+    ty *va = a;                                        \
+    ty *vb = b;                                        \
+    return *va > *vb ? 1 : *va < *vb ? -1 : 0;         \
 }                                                      \
 
 
@@ -385,6 +412,16 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)              \
 }                                                              \
 
 
+#define YM_CMP_INT(scope, name, n)                     \
+static int                                             \
+YM_CMP(scope, name)(void *a, void *b)                  \
+{                                                      \
+    YM_CONFIG_TYPE *ra = a;                            \
+    YM_CONFIG_TYPE *rb = b;                            \
+    return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
+}                                                      \
+
+
 #define YM_INIT_FLOAT(scope, name, n)                          \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -468,6 +505,16 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
                               32,                      \
                               "%lf",                   \
                               (double)*v);             \
+}                                                      \
+
+
+#define YM_CMP_FLOAT(scope, name, n)                   \
+static int                                             \
+YM_CMP(scope, name)(void *a, void *b)                  \
+{                                                      \
+    YM_CONFIG_TYPE *ra = a;                            \
+    YM_CONFIG_TYPE *rb = b;                            \
+    return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
 }                                                      \
 
 
@@ -716,6 +763,29 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 }                                                      \
 
 
+#define YM_CMP_STR(scope, name, n)             \
+static int                                     \
+YM_CMP(scope, name)(void *a, void *b)          \
+{                                              \
+    YM_CONFIG_TYPE *ra = a;                    \
+    YM_CONFIG_TYPE *rb = b;                    \
+    if (ra->n == NULL) {                       \
+        if (rb->n == NULL) {                   \
+            return 0;                          \
+        } else {                               \
+            return -1;                         \
+        }                                      \
+    } else {                                   \
+        if (rb->n == NULL) {                   \
+            return 1;                          \
+        } else {                               \
+            return bytes_cmp(ra->n, rb->n);    \
+        }                                      \
+    }                                          \
+    return 0;                                  \
+}                                              \
+
+
 #define YM_INIT_SEQ(scope, name, n, sz, init, fini)            \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -758,6 +828,14 @@ YM_STR(scope, name)(UNUSED bytestream_t *bs, UNUSED void *data)\
 }                                                              \
 
 
+#define YM_CMP_SEQ(scope, name, n)                     \
+static int                                             \
+YM_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
+{                                                      \
+    return 0;                                          \
+}                                                      \
+
+
 #define YM_INIT_MAP(scope, name, n)                                            \
 static int YM_INIT(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)   \
 {                                                                              \
@@ -782,6 +860,14 @@ YM_STR(scope, name)(UNUSED bytestream_t *bs, UNUSED void *data)\
 }                                                              \
 
 
+#define YM_CMP_MAP(scope, name, n)                     \
+static int                                             \
+YM_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
+{                                                      \
+    return 0;                                          \
+}                                                      \
+
+
 #define YM_PAIR_TY0(scope, t, name, ...)               \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     t,                                                 \
@@ -790,20 +876,22 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     NULL,                                              \
     NULL,                                              \
     NULL,                                              \
+    NULL,                                              \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
 
 
-#define YM_PAIR_EXT(scope, t, name, init, fini, str, addr, ...)\
-UNUSED static ym_node_info_t YM_NAME(scope, name) = {          \
-    t,                                                         \
-    #name,                                                     \
-    init,                                                      \
-    fini,                                                      \
-    str,                                                       \
-    addr,                                                      \
-    {__VA_ARGS__, NULL}                                        \
-}                                                              \
+#define YM_PAIR_EXT(scope, t, name, init, fini, str, cmp, addr, ...)   \
+UNUSED static ym_node_info_t YM_NAME(scope, name) = {                  \
+    t,                                                                 \
+    #name,                                                             \
+    init,                                                              \
+    fini,                                                              \
+    str,                                                               \
+    cmp,                                                               \
+    addr,                                                              \
+    {__VA_ARGS__, NULL}                                                \
+}                                                                      \
 
 
 #define YM_PAIR_TY(scope, t, name, ...)                \
@@ -813,6 +901,7 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     YM_INIT(scope, name),                              \
     YM_FINI(scope, name),                              \
     YM_STR(scope, name),                               \
+    YM_CMP(scope, name),                               \
     YM_ADDR(scope, name),                              \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
@@ -825,6 +914,7 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     init,                                              \
     YM_FINI(scope, name),                              \
     YM_STR(scope, name),                               \
+    YM_CMP(scope, name),                               \
     YM_ADDR(scope, name),                              \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
@@ -838,6 +928,7 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
 YM_INIT_BOOL(scope, name, n)                   \
 YM_FINI_BOOL(scope, name, n)                   \
 YM_STR_BOOL(scope, name, n)                    \
+YM_CMP_BOOL(scope, name, n)                    \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_BOOL_TAG, name, NULL)   \
 
@@ -846,6 +937,7 @@ YM_PAIR_TY(scope, YAML_BOOL_TAG, name, NULL)   \
 YM_INIT_INT0(scope, name, ty)                  \
 YM_FINI_INT0(scope, name, ty)                  \
 YM_STR_INT0(scope, name, ty)                   \
+YM_CMP_INT0(scope, name, ty)                   \
 YM_ADDR_TY0(scope, name, ty)                   \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
@@ -854,6 +946,7 @@ YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 YM_INIT_INT(scope, name, n)                    \
 YM_FINI_INT(scope, name, n)                    \
 YM_STR_INT(scope, name, n)                     \
+YM_CMP_INT(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
@@ -862,6 +955,7 @@ YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 YM_INIT_INT_CHECKRANGE(scope, name, n, a, b)           \
 YM_FINI_INT(scope, name, n)                            \
 YM_STR_INT(scope, name, n)                             \
+YM_CMP_INT(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)            \
 
@@ -870,6 +964,7 @@ YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)            \
 YM_INIT_ENUM(scope, name, n, en)               \
 YM_FINI_INT(scope, name, n)                    \
 YM_STR_ENUM(scope, name, n, en)                \
+YM_CMP_INT(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 
@@ -877,6 +972,7 @@ YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
 #define YM_PAIR_INT_EXT(scope, name, n, init)          \
 YM_FINI_INT(scope, name, n)                            \
 YM_STR_INT(scope, name, n)                             \
+YM_CMP_INT(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY1(scope, YAML_INT_TAG, name, init, NULL)     \
 
@@ -885,6 +981,7 @@ YM_PAIR_TY1(scope, YAML_INT_TAG, name, init, NULL)     \
 YM_INIT_FLOAT(scope, name, n)                  \
 YM_FINI_FLOAT(scope, name, n)                  \
 YM_STR_FLOAT(scope, name, n)                   \
+YM_CMP_FLOAT(scope, name, n)                   \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)  \
 
@@ -893,6 +990,7 @@ YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)  \
 YM_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)         \
 YM_FINI_FLOAT(scope, name, n)                          \
 YM_STR_FLOAT(scope, name, n)                           \
+YM_CMP_FLOAT(scope, name, n)                           \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)          \
 
@@ -901,6 +999,7 @@ YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)          \
 YM_INIT_STR(scope, name, n)                    \
 YM_FINI_STR(scope, name, n)                    \
 YM_STR_STR(scope, name, n)                     \
+YM_CMP_STR(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
 
@@ -909,6 +1008,7 @@ YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
 YM_INIT_STR_CHECKDIRNAME(scope, name, n)               \
 YM_FINI_STR(scope, name, n)                            \
 YM_STR_STR(scope, name, n)                             \
+YM_CMP_STR(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
 
@@ -917,6 +1017,7 @@ YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
 YM_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)            \
 YM_FINI_STR(scope, name, n)                                    \
 YM_STR_STR(scope, name, n)                                     \
+YM_CMP_STR(scope, name, n)                                     \
 YM_ADDR_TY(scope, name, n)                                     \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)                    \
 
@@ -925,6 +1026,7 @@ YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)                    \
 YM_INIT_STR_CHECKFILE(scope, name, n)          \
 YM_FINI_STR(scope, name, n)                    \
 YM_STR_STR(scope, name, n)                     \
+YM_CMP_STR(scope, name, n)                     \
 YM_ADDR_TY(scope, name, n)                     \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
 
@@ -933,6 +1035,7 @@ YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
 YM_INIT_STR_CHECKDIR(scope, name, n)                   \
 YM_FINI_STR(scope, name, n)                            \
 YM_STR_STR(scope, name, n)                             \
+YM_CMP_STR(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
 
@@ -941,6 +1044,7 @@ YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
 YM_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)        \
 YM_FINI_STR(scope, name, n)                            \
 YM_STR_STR(scope, name, n)                             \
+YM_CMP_STR(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
 
@@ -949,6 +1053,7 @@ YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
 YM_INIT_SEQ(scope, name, n, sz, init, fini)                    \
 YM_FINI_SEQ(scope, name, n)                                    \
 YM_STR_SEQ(scope, name, n)                                     \
+YM_CMP_SEQ(scope, name, n)                                     \
 YM_ADDR_TY(scope, name, n)                                     \
 YM_PAIR_TY(scope, YAML_SEQ_TAG, name, __VA_ARGS__)             \
 
@@ -962,6 +1067,7 @@ YM_PAIR_TY(scope, YAML_SEQ_TAG, name, __VA_ARGS__)             \
 YM_INIT_MAP(scope, name, n)                            \
 YM_FINI_MAP(scope, name, n)                            \
 YM_STR_MAP(scope, name, n)                             \
+YM_CMP_MAP(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_MAP_TAG, name, __VA_ARGS__)     \
 
@@ -970,13 +1076,14 @@ YM_PAIR_TY(scope, YAML_MAP_TAG, name, __VA_ARGS__)     \
     YM_PAIR_TY0(scope, YAML_MAP_TAG, name, __VA_ARGS__)\
 
 
-#define YM_PAIR_MAP_EXT(scope, name, init, fini, str, addr, ...)       \
+#define YM_PAIR_MAP_EXT(scope, name, init, fini, str, cmp, addr, ...)  \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {                  \
     YAML_MAP_TAG,                                                      \
     #name,                                                             \
     init,                                                              \
     fini,                                                              \
     str,                                                               \
+    cmp,                                                               \
     addr,                                                              \
     {__VA_ARGS__, NULL}                                                \
 }                                                                      \
@@ -1070,6 +1177,13 @@ int ym_node_info_traverse(ym_node_info_traverse_ctx_t *,
                           void *,
                           ym_node_info_traverser_t,
                           void *);
+int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *,
+                           ym_node_info_t *,
+                           void *,
+                           void *,
+                           ym_node_info_traverser2_t,
+                           void *);
+int ym_node_info_cmp_data(ym_node_info_t *, void *, void *);
 
 typedef struct _ym_read_params {
     bytestream_t bs;
