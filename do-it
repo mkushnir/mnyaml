@@ -23,6 +23,13 @@ then
     autoreconf --force
     ./configure --prefix=$HOME --enable-debug
 
+elif test "$1" = "dev-cmp-debug"
+then
+    export LDFLAGS="-L$HOME/lib -L/usr/local/lib"
+    export CFLAGS="-I$HOME/include -I/usr/local/include -DYM_CMP_DEBUG"
+    autoreconf --force
+    ./configure --prefix=$HOME --enable-debug
+
 elif test "$1" = "dev-ndebug"
 then
     export LDFLAGS=-L$HOME/lib

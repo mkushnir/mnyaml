@@ -206,12 +206,19 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 }                                                      \
 
 
+#ifdef YM_CMP_DEBUG
+#define YM_CMP_DEBUG_BOOL(n) if (ra->n != rb->n) TRACE("%d/%d", ra->n, rb->n);
+#else
+#define YM_CMP_DEBUG_BOOL(n)
+#endif
+
 #define YM_CMP_BOOL(scope, name, n)                    \
 static int                                             \
 YM_CMP(scope, name)(void *a, void *b)                  \
 {                                                      \
     YM_CONFIG_TYPE *ra = a;                            \
     YM_CONFIG_TYPE *rb = b;                            \
+    YM_CMP_DEBUG_BOOL(n)                               \
     return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
 }                                                      \
 
@@ -265,12 +272,19 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 }                                                      \
 
 
+#ifdef YM_CMP_DEBUG
+#define YM_CMP_DEBUG_INT0 if (*va != *vb) TRACE("%ld/%ld", (intmax_t)*va, (intmax_t)*vb);
+#else
+#define YM_CMP_DEBUG_INT0
+#endif
+
 #define YM_CMP_INT0(scope, name, ty)                   \
 static int                                             \
 YM_CMP(scope, name)(void *a, void *b)                  \
 {                                                      \
     ty *va = a;                                        \
     ty *vb = b;                                        \
+    YM_CMP_DEBUG_INT0                                  \
     return *va > *vb ? 1 : *va < *vb ? -1 : 0;         \
 }                                                      \
 
@@ -412,12 +426,19 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)              \
 }                                                              \
 
 
+#ifdef YM_CMP_DEBUG
+#define YM_CMP_DEBUG_INT(n) if (ra->n != rb->n) TRACE("%ld/%ld", (intmax_t)ra->n, (intmax_t)rb->n);
+#else
+#define YM_CMP_DEBUG_INT(n)
+#endif
+
 #define YM_CMP_INT(scope, name, n)                     \
 static int                                             \
 YM_CMP(scope, name)(void *a, void *b)                  \
 {                                                      \
     YM_CONFIG_TYPE *ra = a;                            \
     YM_CONFIG_TYPE *rb = b;                            \
+    YM_CMP_DEBUG_INT(n)                                \
     return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
 }                                                      \
 
@@ -508,12 +529,19 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 }                                                      \
 
 
+#ifdef YM_CMP_DEBUG
+#define YM_CMP_DEBUG_FLOAT(n) if (ra->n != rb->n) TRACE("%lf/%lf", (double)ra->n, (double)rb->n);
+#else
+#define YM_CMP_DEBUG_FLOAT(n)
+#endif
+
 #define YM_CMP_FLOAT(scope, name, n)                   \
 static int                                             \
 YM_CMP(scope, name)(void *a, void *b)                  \
 {                                                      \
     YM_CONFIG_TYPE *ra = a;                            \
     YM_CONFIG_TYPE *rb = b;                            \
+    YM_CMP_DEBUG_FLOAT(n)                              \
     return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
 }                                                      \
 
@@ -762,6 +790,12 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
                               (*v)->data);             \
 }                                                      \
 
+#ifdef YM_CMP_DEBUG
+#define YM_CMP_DEBUG_STR(n) TRACE("%s/%s", ra->n->data, rb->n->data);
+#else
+#define YM_CMP_DEBUG_STR(n)
+#endif
+
 
 #define YM_CMP_STR(scope, name, n)             \
 static int                                     \
@@ -773,10 +807,12 @@ YM_CMP(scope, name)(void *a, void *b)          \
         if (rb->n == NULL) {                   \
             return 0;                          \
         } else {                               \
+            YM_CMP_DEBUG_STR(n)                \
             return -1;                         \
         }                                      \
     } else {                                   \
         if (rb->n == NULL) {                   \
+            YM_CMP_DEBUG_STR(n)                \
             return 1;                          \
         } else {                               \
             return bytes_cmp(ra->n, rb->n);    \

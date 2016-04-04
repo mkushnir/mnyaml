@@ -545,7 +545,16 @@ cmp_cb(UNUSED ym_node_info_traverse_ctx_t *tctx,
        UNUSED void *udata)
 {
     if (ninfo->cmp != NULL) {
+#ifdef YM_CMP_DEBUG
+        int res;
+        res = ninfo->cmp(a, b);
+        if (res != 0) {
+            TRACE("diff at %s", ninfo->name);
+        }
+        return res;
+#else
         return ninfo->cmp(a, b);
+#endif
     }
     return 0;
 }
