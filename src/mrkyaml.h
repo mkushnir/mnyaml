@@ -791,9 +791,9 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 }                                                      \
 
 #ifdef YM_CMP_DEBUG
-#define YM_CMP_DEBUG_STR(n) TRACE("%s/%s", ra->n->data, rb->n->data);
+#define YM_CMP_DEBUG_STR(n, res) if(res) TRACE("%s/%s", ra->n->data, rb->n->data);
 #else
-#define YM_CMP_DEBUG_STR(n)
+#define YM_CMP_DEBUG_STR(n, res)
 #endif
 
 
@@ -807,15 +807,18 @@ YM_CMP(scope, name)(void *a, void *b)          \
         if (rb->n == NULL) {                   \
             return 0;                          \
         } else {                               \
-            YM_CMP_DEBUG_STR(n)                \
+            YM_CMP_DEBUG_STR(n, 1)             \
             return -1;                         \
         }                                      \
     } else {                                   \
         if (rb->n == NULL) {                   \
-            YM_CMP_DEBUG_STR(n)                \
+            YM_CMP_DEBUG_STR(n, 1)             \
             return 1;                          \
         } else {                               \
-            return bytes_cmp(ra->n, rb->n);    \
+            int res;                           \
+            res = bytes_cmp(ra->n, rb->n);     \
+            YM_CMP_DEBUG_STR(n, res)           \
+            return res;                        \
         }                                      \
     }                                          \
     return 0;                                  \
