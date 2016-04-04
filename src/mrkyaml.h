@@ -586,18 +586,24 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     ptr = (char *)node->data.scalar.value;                     \
     /*TRACE("ptr=%s", ptr); */                                 \
     if (*ptr != '\0') {                                        \
-        if ((d = dirname(ptr)) == NULL) {                      \
+        char *tmp;                                             \
+        tmp = strdup(ptr);                                     \
+        if ((d = dirname(tmp)) == NULL) {                      \
             TRACE("Could not get dirname from %s", ptr);       \
+            free(tmp);                                         \
             return YM_INIT_INVALID;                            \
         }                                                      \
         if (stat(d, &sb) != 0) {                               \
             TRACE("Could not stat %s", d);                     \
+            free(tmp);                                         \
             return YM_INIT_INVALID;                            \
         }                                                      \
         if (!S_ISDIR(sb.st_mode)) {                            \
             TRACE("Not a directory %s", d);                    \
+            free(tmp);                                         \
             return YM_INIT_INVALID;                            \
         }                                                      \
+        free(tmp);                                             \
     }                                                          \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
@@ -615,6 +621,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr, *d;                                             \
+    char *tmp;                                                 \
     if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
@@ -622,10 +629,12 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
         return res;                                            \
     }                                                          \
     ptr = (char *)node->data.scalar.value;                     \
+    tmp = strdup(ptr);                                         \
     /*TRACE("ptr=%s", ptr); */                                 \
     if (*ptr != '\0') {                                        \
-        if ((d = dirname(ptr)) == NULL) {                      \
+        if ((d = dirname(tmp)) == NULL) {                      \
             TRACE("Could not get dirname from %s", ptr);       \
+            free(tmp);                                         \
             return YM_INIT_INVALID;                            \
         }                                                      \
         if (stat(d, &sb) == 0) {                               \
@@ -633,6 +642,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
                 goto end;                                      \
             } else {                                           \
                 TRACE("Not a directory %s", d);                \
+                free(tmp);                                     \
                 return YM_INIT_INVALID;                        \
             }                                                  \
         } else {                                               \
@@ -640,10 +650,12 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
                 goto end;                                      \
             } else {                                           \
                 TRACE("Could not mkdir %s", d);                \
+                free(tmp);                                     \
                 return YM_INIT_INVALID;                        \
             }                                                  \
         }                                                      \
     }                                                          \
+    free(tmp);                                                 \
 end:                                                           \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
