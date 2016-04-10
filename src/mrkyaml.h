@@ -146,6 +146,9 @@ YM_ADDR(scope, name)(void *data)       \
 
 
 
+/*
+ * boolean
+ */
 #define YM_INIT_BOOL(scope, name, n)                           \
 static int                                                     \
 YM_INIT(scope, name)(void *data, yaml_node_t *node)            \
@@ -223,6 +226,9 @@ YM_CMP(scope, name)(void *a, void *b)                  \
 }                                                      \
 
 
+/*
+ * int0
+ */
 #define YM_INIT_INT0(scope, name, ty)                          \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -289,6 +295,9 @@ YM_CMP(scope, name)(void *a, void *b)                  \
 }                                                      \
 
 
+/*
+ * int, enum
+ */
 #define YM_INIT_INT(scope, name, n)                            \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -443,6 +452,9 @@ YM_CMP(scope, name)(void *a, void *b)                  \
 }                                                      \
 
 
+/*
+ * float
+ */
 #define YM_INIT_FLOAT(scope, name, n)                          \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -546,6 +558,95 @@ YM_CMP(scope, name)(void *a, void *b)                  \
 }                                                      \
 
 
+/*
+ * str0 (bytes_t *)
+ */
+#define YM_INIT_STR0(scope, name)                              \
+static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
+{                                                              \
+    int res;                                                   \
+    bytes_t **v = data;                                        \
+    char *ptr;                                                 \
+    if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+        TRACE("expected %s found %s",                          \
+              YAML_STR_TAG,                                    \
+              node->tag);                                      \
+        return res;                                            \
+    }                                                          \
+    /*TRACE("ptr=%s", node->data.scalar.value); */             \
+    ptr = (char *)node->data.scalar.value;                     \
+    BYTES_DECREF(v);                                           \
+    *v = bytes_new_from_str(ptr);                              \
+    BYTES_INCREF(*v);                                          \
+    /*TRACE("v=%s", (*v)->data); */                            \
+    return 0;                                                  \
+}                                                              \
+
+
+#define YM_FINI_STR0(scope, name)              \
+static int YM_FINI(scope, name)(void *data)    \
+{                                              \
+    bytes_t **v = data;                        \
+/*    TRACE("v=%p (str)", v);                  \
+    TRACE("v=%s (str)", (*v)->data) */;        \
+    BYTES_DECREF(v);                           \
+    return 0;                                  \
+}                                              \
+
+
+#define YM_STR_STR0(scope, name)                       \
+static ssize_t                                         \
+YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+{                                                      \
+    bytes_t **v = data;                                \
+    if (*v == NULL) {                                  \
+        return 0;                                      \
+    }                                                  \
+    return bytestream_nprintf(bs,                      \
+                              32 + (*v)->sz,           \
+                              "'%s'",                  \
+                              (*v)->data);             \
+}                                                      \
+
+
+#ifdef YM_CMP_DEBUG
+#define YM_CMP_DEBUG_STR0(n, res) if(res) TRACE("%s/%s", (*va)->data, (*vb)->data);
+#else
+#define YM_CMP_DEBUG_STR0(n, res)
+#endif
+
+
+#define YM_CMP_STR0(scope, name)       \
+static int                             \
+YM_CMP(scope, name)(void *a, void *b)  \
+{                                      \
+    bytes_t **va = a;                  \
+    bytes_t **vb = b;                  \
+    if (*va == NULL) {                 \
+        if (*vb == NULL) {             \
+            return 0;                  \
+        } else {                       \
+            YM_CMP_DEBUG_STR0(n, 1)    \
+            return -1;                 \
+        }                              \
+    } else {                           \
+        if (*vb == NULL) {             \
+            YM_CMP_DEBUG_STR0(n, 1)    \
+            return 1;                  \
+        } else {                       \
+            int res;                   \
+            res = bytes_cmp(*va, *vb); \
+            YM_CMP_DEBUG_STR0(n, res)  \
+            return res;                \
+        }                              \
+    }                                  \
+    return 0;                          \
+}                                      \
+
+
+/*
+ * str
+ */
 #define YM_INIT_STR(scope, name, n)                            \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -775,16 +876,16 @@ end:                                                           \
 }                                                              \
 
 
-#define YM_FINI_STR(scope, name, n)                                    \
-static int YM_FINI(scope, name)(void *data)                            \
-{                                                                      \
-    YM_CONFIG_TYPE *root = data;                                       \
-    __typeof__(&root->n) v = &root->n;                                 \
-/*    TRACE("v=%p (str)", v);                                          \
-    TRACE("v=%s (str)", (*v)->data) */;                                \
-    BYTES_DECREF(v);                                                   \
-    return 0;                                                          \
-}                                                                      \
+#define YM_FINI_STR(scope, name, n)            \
+static int YM_FINI(scope, name)(void *data)    \
+{                                              \
+    YM_CONFIG_TYPE *root = data;               \
+    __typeof__(&root->n) v = &root->n;         \
+/*    TRACE("v=%p (str)", v);                  \
+    TRACE("v=%s (str)", (*v)->data) */;        \
+    BYTES_DECREF(v);                           \
+    return 0;                                  \
+}                                              \
 
 
 #define YM_STR_STR(scope, name, n)                     \
@@ -801,6 +902,7 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
                               "'%s'",                  \
                               (*v)->data);             \
 }                                                      \
+
 
 #ifdef YM_CMP_DEBUG
 #define YM_CMP_DEBUG_STR(n, res) if(res) TRACE("%s/%s", ra->n->data, rb->n->data);
@@ -837,6 +939,9 @@ YM_CMP(scope, name)(void *a, void *b)          \
 }                                              \
 
 
+/*
+ * seq
+ */
 #define YM_INIT_SEQ(scope, name, n, sz, init, fini)            \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
@@ -887,6 +992,9 @@ YM_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
 }                                                      \
 
 
+/*
+ * map
+ */
 #define YM_INIT_MAP(scope, name, n)                                            \
 static int YM_INIT(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)   \
 {                                                                              \
@@ -919,6 +1027,9 @@ YM_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
 }                                                      \
 
 
+/*
+ * pair definitions
+ */
 #define YM_PAIR_TY0(scope, t, name, ...)               \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     t,                                                 \
@@ -1044,6 +1155,15 @@ YM_STR_FLOAT(scope, name, n)                           \
 YM_CMP_FLOAT(scope, name, n)                           \
 YM_ADDR_TY(scope, name, n)                             \
 YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)          \
+
+
+#define YM_PAIR_STR0(scope, name)              \
+YM_INIT_STR0(scope, name)                      \
+YM_FINI_STR0(scope, name)                      \
+YM_STR_STR0(scope, name)                       \
+YM_CMP_STR0(scope, name)                       \
+YM_ADDR_TY0(scope, name, bytes_t *)            \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
 
 
 #define YM_PAIR_STR(scope, name, n)            \
