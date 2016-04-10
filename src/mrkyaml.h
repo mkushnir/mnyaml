@@ -91,6 +91,8 @@ typedef struct _ym_node_info {
     ssize_t (*str)(bytestream_t *, void *);
     int (*cmp)(void *, void *);
     void *(*addr)(void *);
+#define YM_FLAG_IGNORE_UNKNOWN_SUBNODES (0x01)
+    uintptr_t flags;
     struct _ym_node_info *subs[];
 } ym_node_info_t;
 
@@ -1030,7 +1032,7 @@ YM_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
 /*
  * pair definitions
  */
-#define YM_PAIR_TY0(scope, t, name, ...)               \
+#define YM_PAIR_TY0(scope, t, name, flags, ...)        \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     t,                                                 \
     #name,                                             \
@@ -1039,24 +1041,26 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     NULL,                                              \
     NULL,                                              \
     NULL,                                              \
+    flags,                                             \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
 
 
-#define YM_PAIR_EXT(scope, t, name, init, fini, str, cmp, addr, ...)   \
-UNUSED static ym_node_info_t YM_NAME(scope, name) = {                  \
-    t,                                                                 \
-    #name,                                                             \
-    init,                                                              \
-    fini,                                                              \
-    str,                                                               \
-    cmp,                                                               \
-    addr,                                                              \
-    {__VA_ARGS__, NULL}                                                \
-}                                                                      \
+#define YM_PAIR_EXT(scope, t, name, flags, init, fini, str, cmp, addr, ...)    \
+UNUSED static ym_node_info_t YM_NAME(scope, name) = {                          \
+    t,                                                                         \
+    #name,                                                                     \
+    init,                                                                      \
+    fini,                                                                      \
+    str,                                                                       \
+    cmp,                                                                       \
+    addr,                                                                      \
+    flags,                                                                     \
+    {__VA_ARGS__, NULL}                                                        \
+}                                                                              \
 
 
-#define YM_PAIR_TY(scope, t, name, ...)                \
+#define YM_PAIR_TY(scope, t, name, flags, ...)         \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     t,                                                 \
     #name,                                             \
@@ -1065,11 +1069,12 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     YM_STR(scope, name),                               \
     YM_CMP(scope, name),                               \
     YM_ADDR(scope, name),                              \
+    flags,                                             \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
 
 
-#define YM_PAIR_TY1(scope, t, name, init, ...)         \
+#define YM_PAIR_TY1(scope, t, name, flags, init, ...)  \
 UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     t,                                                 \
     #name,                                             \
@@ -1078,186 +1083,188 @@ UNUSED static ym_node_info_t YM_NAME(scope, name) = {  \
     YM_STR(scope, name),                               \
     YM_CMP(scope, name),                               \
     YM_ADDR(scope, name),                              \
+    flags,                                             \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
 
 
-#define YM_PAIR_NULL(scope, name, init)                \
-    YM_PAIR_TY0(scope, YAML_NULL_TAG, name, NULL)      \
+#define YM_PAIR_NULL(scope, name, flags, init)                 \
+    YM_PAIR_TY0(scope, YAML_NULL_TAG, name, flags, NULL)       \
 
 
-#define YM_PAIR_BOOL(scope, name, n)           \
-YM_INIT_BOOL(scope, name, n)                   \
-YM_FINI_BOOL(scope, name, n)                   \
-YM_STR_BOOL(scope, name, n)                    \
-YM_CMP_BOOL(scope, name, n)                    \
-YM_ADDR_TY(scope, name, n)                     \
-YM_PAIR_TY(scope, YAML_BOOL_TAG, name, NULL)   \
+#define YM_PAIR_BOOL(scope, name, flags, n)            \
+YM_INIT_BOOL(scope, name, n)                           \
+YM_FINI_BOOL(scope, name, n)                           \
+YM_STR_BOOL(scope, name, n)                            \
+YM_CMP_BOOL(scope, name, n)                            \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_BOOL_TAG, name, flags, NULL)    \
 
 
-#define YM_PAIR_INT0(scope, name, ty)          \
-YM_INIT_INT0(scope, name, ty)                  \
-YM_FINI_INT0(scope, name, ty)                  \
-YM_STR_INT0(scope, name, ty)                   \
-YM_CMP_INT0(scope, name, ty)                   \
-YM_ADDR_TY0(scope, name, ty)                   \
-YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
+#define YM_PAIR_INT0(scope, name, flags, ty)           \
+YM_INIT_INT0(scope, name, ty)                          \
+YM_FINI_INT0(scope, name, ty)                          \
+YM_STR_INT0(scope, name, ty)                           \
+YM_CMP_INT0(scope, name, ty)                           \
+YM_ADDR_TY0(scope, name, ty)                           \
+YM_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)     \
 
 
-#define YM_PAIR_INT(scope, name, n)            \
-YM_INIT_INT(scope, name, n)                    \
-YM_FINI_INT(scope, name, n)                    \
-YM_STR_INT(scope, name, n)                     \
-YM_CMP_INT(scope, name, n)                     \
-YM_ADDR_TY(scope, name, n)                     \
-YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
-
-
-#define YM_PAIR_INT_CHECKRANGE(scope, name, n, a, b)   \
-YM_INIT_INT_CHECKRANGE(scope, name, n, a, b)           \
+#define YM_PAIR_INT(scope, name, flags, n)             \
+YM_INIT_INT(scope, name, n)                            \
 YM_FINI_INT(scope, name, n)                            \
 YM_STR_INT(scope, name, n)                             \
 YM_CMP_INT(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
-YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)            \
+YM_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)     \
 
 
-#define YM_PAIR_ENUM(scope, name, n, en)       \
-YM_INIT_ENUM(scope, name, n, en)               \
-YM_FINI_INT(scope, name, n)                    \
-YM_STR_ENUM(scope, name, n, en)                \
-YM_CMP_INT(scope, name, n)                     \
-YM_ADDR_TY(scope, name, n)                     \
-YM_PAIR_TY(scope, YAML_INT_TAG, name, NULL)    \
+#define YM_PAIR_INT_CHECKRANGE(scope, name, flags, n, a, b)    \
+YM_INIT_INT_CHECKRANGE(scope, name, n, a, b)                   \
+YM_FINI_INT(scope, name, n)                                    \
+YM_STR_INT(scope, name, n)                                     \
+YM_CMP_INT(scope, name, n)                                     \
+YM_ADDR_TY(scope, name, n)                                     \
+YM_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)             \
 
 
-#define YM_PAIR_INT_EXT(scope, name, n, init)          \
+#define YM_PAIR_ENUM(scope, name, flags, n, en)        \
+YM_INIT_ENUM(scope, name, n, en)                       \
 YM_FINI_INT(scope, name, n)                            \
-YM_STR_INT(scope, name, n)                             \
+YM_STR_ENUM(scope, name, n, en)                        \
 YM_CMP_INT(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
-YM_PAIR_TY1(scope, YAML_INT_TAG, name, init, NULL)     \
+YM_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)     \
 
 
-#define YM_PAIR_FLOAT(scope, name, n)          \
-YM_INIT_FLOAT(scope, name, n)                  \
-YM_FINI_FLOAT(scope, name, n)                  \
-YM_STR_FLOAT(scope, name, n)                   \
-YM_CMP_FLOAT(scope, name, n)                   \
-YM_ADDR_TY(scope, name, n)                     \
-YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)  \
+#define YM_PAIR_INT_EXT(scope, name, flags, n, init)           \
+YM_FINI_INT(scope, name, n)                                    \
+YM_STR_INT(scope, name, n)                                     \
+YM_CMP_INT(scope, name, n)                                     \
+YM_ADDR_TY(scope, name, n)                                     \
+YM_PAIR_TY1(scope, YAML_INT_TAG, name, flags, init, NULL)      \
 
 
-#define YM_PAIR_FLOAT_CHECKRANGE(scope, name, n, a, b) \
-YM_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)         \
+#define YM_PAIR_FLOAT(scope, name, flags, n)           \
+YM_INIT_FLOAT(scope, name, n)                          \
 YM_FINI_FLOAT(scope, name, n)                          \
 YM_STR_FLOAT(scope, name, n)                           \
 YM_CMP_FLOAT(scope, name, n)                           \
 YM_ADDR_TY(scope, name, n)                             \
-YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, NULL)          \
+YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, flags, NULL)   \
 
 
-#define YM_PAIR_STR0(scope, name)              \
-YM_INIT_STR0(scope, name)                      \
-YM_FINI_STR0(scope, name)                      \
-YM_STR_STR0(scope, name)                       \
-YM_CMP_STR0(scope, name)                       \
-YM_ADDR_TY0(scope, name, bytes_t *)            \
-YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
+#define YM_PAIR_FLOAT_CHECKRANGE(scope, name, flags, n, a, b)  \
+YM_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)                 \
+YM_FINI_FLOAT(scope, name, n)                                  \
+YM_STR_FLOAT(scope, name, n)                                   \
+YM_CMP_FLOAT(scope, name, n)                                   \
+YM_ADDR_TY(scope, name, n)                                     \
+YM_PAIR_TY(scope, YAML_FLOAT_TAG, name, flags, NULL)           \
 
 
-#define YM_PAIR_STR(scope, name, n)            \
-YM_INIT_STR(scope, name, n)                    \
-YM_FINI_STR(scope, name, n)                    \
-YM_STR_STR(scope, name, n)                     \
-YM_CMP_STR(scope, name, n)                     \
-YM_ADDR_TY(scope, name, n)                     \
-YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
+#define YM_PAIR_STR0(scope, name, flags)               \
+YM_INIT_STR0(scope, name)                              \
+YM_FINI_STR0(scope, name)                              \
+YM_STR_STR0(scope, name)                               \
+YM_CMP_STR0(scope, name)                               \
+YM_ADDR_TY0(scope, name, bytes_t *)                    \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
 
 
-#define YM_PAIR_STR_CHECKDIRNAME(scope, name, n)       \
+#define YM_PAIR_STR(scope, name, flags, n)             \
+YM_INIT_STR(scope, name, n)                            \
+YM_FINI_STR(scope, name, n)                            \
+YM_STR_STR(scope, name, n)                             \
+YM_CMP_STR(scope, name, n)                             \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
+
+
+#define YM_PAIR_STR_CHECKDIRNAME(scope, name, flags, n)\
 YM_INIT_STR_CHECKDIRNAME(scope, name, n)               \
 YM_FINI_STR(scope, name, n)                            \
 YM_STR_STR(scope, name, n)                             \
 YM_CMP_STR(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
-YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
 
 
-#define YM_PAIR_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)    \
-YM_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)            \
-YM_FINI_STR(scope, name, n)                                    \
-YM_STR_STR(scope, name, n)                                     \
-YM_CMP_STR(scope, name, n)                                     \
-YM_ADDR_TY(scope, name, n)                                     \
-YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)                    \
+#define YM_PAIR_STR_CHECKDIRNAME_AUTOCREATE(scope, name, flags, n)     \
+YM_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)                    \
+YM_FINI_STR(scope, name, n)                                            \
+YM_STR_STR(scope, name, n)                                             \
+YM_CMP_STR(scope, name, n)                                             \
+YM_ADDR_TY(scope, name, n)                                             \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)                     \
 
 
-#define YM_PAIR_STR_CHECKFILE(scope, name, n)  \
-YM_INIT_STR_CHECKFILE(scope, name, n)          \
-YM_FINI_STR(scope, name, n)                    \
-YM_STR_STR(scope, name, n)                     \
-YM_CMP_STR(scope, name, n)                     \
-YM_ADDR_TY(scope, name, n)                     \
-YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)    \
+#define YM_PAIR_STR_CHECKFILE(scope, name, flags, n)   \
+YM_INIT_STR_CHECKFILE(scope, name, n)                  \
+YM_FINI_STR(scope, name, n)                            \
+YM_STR_STR(scope, name, n)                             \
+YM_CMP_STR(scope, name, n)                             \
+YM_ADDR_TY(scope, name, n)                             \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
 
 
-#define YM_PAIR_STR_CHECKDIR(scope, name, n)           \
+#define YM_PAIR_STR_CHECKDIR(scope, name, flags, n)    \
 YM_INIT_STR_CHECKDIR(scope, name, n)                   \
 YM_FINI_STR(scope, name, n)                            \
 YM_STR_STR(scope, name, n)                             \
 YM_CMP_STR(scope, name, n)                             \
 YM_ADDR_TY(scope, name, n)                             \
-YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
 
 
-#define YM_PAIR_STR_CHECKDIR_AUTOCREATE(scope, name, n)\
-YM_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)        \
-YM_FINI_STR(scope, name, n)                            \
-YM_STR_STR(scope, name, n)                             \
-YM_CMP_STR(scope, name, n)                             \
-YM_ADDR_TY(scope, name, n)                             \
-YM_PAIR_TY(scope, YAML_STR_TAG, name, NULL)            \
+#define YM_PAIR_STR_CHECKDIR_AUTOCREATE(scope, name, flags, n) \
+YM_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)                \
+YM_FINI_STR(scope, name, n)                                    \
+YM_STR_STR(scope, name, n)                                     \
+YM_CMP_STR(scope, name, n)                                     \
+YM_ADDR_TY(scope, name, n)                                     \
+YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)             \
 
 
-#define YM_PAIR_SEQ(scope, name, n, sz, init, fini, ...)       \
+#define YM_PAIR_SEQ(scope, name, flags, n, sz, init, fini, ...)\
 YM_INIT_SEQ(scope, name, n, sz, init, fini)                    \
 YM_FINI_SEQ(scope, name, n)                                    \
 YM_STR_SEQ(scope, name, n)                                     \
 YM_CMP_SEQ(scope, name, n)                                     \
 YM_ADDR_TY(scope, name, n)                                     \
-YM_PAIR_TY(scope, YAML_SEQ_TAG, name, __VA_ARGS__)             \
+YM_PAIR_TY(scope, YAML_SEQ_TAG, name, flags, __VA_ARGS__)      \
 
 
 
-#define YM_PAIR_TIMESTAMP(scope, name)                 \
-    YM_PAIR_TY0(scope, YAML_TIMESTAMP_TAG, name, NULL) \
+#define YM_PAIR_TIMESTAMP(scope, name, flags)                  \
+    YM_PAIR_TY0(scope, YAML_TIMESTAMP_TAG, name, flags, NULL)  \
 
 
-#define YM_PAIR_MAP(scope, name, n, ...)               \
-YM_INIT_MAP(scope, name, n)                            \
-YM_FINI_MAP(scope, name, n)                            \
-YM_STR_MAP(scope, name, n)                             \
-YM_CMP_MAP(scope, name, n)                             \
-YM_ADDR_TY(scope, name, n)                             \
-YM_PAIR_TY(scope, YAML_MAP_TAG, name, __VA_ARGS__)     \
+#define YM_PAIR_MAP(scope, name, flags, n, ...)                \
+YM_INIT_MAP(scope, name, n)                                    \
+YM_FINI_MAP(scope, name, n)                                    \
+YM_STR_MAP(scope, name, n)                                     \
+YM_CMP_MAP(scope, name, n)                                     \
+YM_ADDR_TY(scope, name, n)                                     \
+YM_PAIR_TY(scope, YAML_MAP_TAG, name, flags, __VA_ARGS__)      \
 
 
-#define YM_PAIR_MAP0(scope, name, ...)                 \
-    YM_PAIR_TY0(scope, YAML_MAP_TAG, name, __VA_ARGS__)\
+#define YM_PAIR_MAP0(scope, name, flags, ...)                  \
+    YM_PAIR_TY0(scope, YAML_MAP_TAG, name, flags, __VA_ARGS__) \
 
 
-#define YM_PAIR_MAP_EXT(scope, name, init, fini, str, cmp, addr, ...)  \
-UNUSED static ym_node_info_t YM_NAME(scope, name) = {                  \
-    YAML_MAP_TAG,                                                      \
-    #name,                                                             \
-    init,                                                              \
-    fini,                                                              \
-    str,                                                               \
-    cmp,                                                               \
-    addr,                                                              \
-    {__VA_ARGS__, NULL}                                                \
-}                                                                      \
+#define YM_PAIR_MAP_EXT(scope, name, flags, init, fini, str, cmp, addr, ...)   \
+UNUSED static ym_node_info_t YM_NAME(scope, name) = {                          \
+    YAML_MAP_TAG,                                                              \
+    #name,                                                                     \
+    init,                                                                      \
+    fini,                                                                      \
+    str,                                                                       \
+    cmp,                                                                       \
+    addr,                                                                      \
+    flags,                                                                     \
+    {__VA_ARGS__, NULL}                                                        \
+}                                                                              \
 
 
 

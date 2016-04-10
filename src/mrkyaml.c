@@ -97,6 +97,7 @@ ym_check_node_subs(yaml_document_t *doc,
                    void *data)
 {
     ym_node_info_t **nsub;
+    int res;
 
     //TRACE("checking subs in %s", ninfo->name);
     if (key->type != YAML_SCALAR_NODE ||
@@ -124,12 +125,18 @@ ym_check_node_subs(yaml_document_t *doc,
             }
         }
     }
-    TRACEN("expected one of:");
+    TRACEN("expected one of '%s' sub-nodes: ", ninfo->name);
     for (nsub = ninfo->subs; *nsub != NULL; ++nsub) {
-        TRACEC(" '%s'", (*nsub)->name);
+        TRACEC("'%s', ", (*nsub)->name);
     }
-    TRACEC(", found '%s'\n", key->data.scalar.value);
-    return YM_CHECK_NODE_NF;
+    if (ninfo->flags & YM_FLAG_IGNORE_UNKNOWN_SUBNODES) {
+        res = 0;
+        TRACEC("found '%s' -- will be ignored\n", key->data.scalar.value);
+    } else {
+        res = YM_CHECK_NODE_NF;
+        TRACEC("found '%s' -- stopped\n", key->data.scalar.value);
+    }
+    return res;
 }
 
 

@@ -26,10 +26,10 @@ typedef struct {
     int bcd;
 } si_t;
 
-YM_PAIR_INT(si_, abc, abc);
-YM_PAIR_INT(si_, bcd, bcd);
+YM_PAIR_INT(si_, abc, 0, abc);
+YM_PAIR_INT(si_, bcd, 0, bcd);
 
-YM_PAIR_MAP0(, _si,
+YM_PAIR_MAP0(, _si, 0,
     &YM_NAME(si_, abc),
     &YM_NAME(si_, bcd)
 );
@@ -117,49 +117,49 @@ myconfig_fini(myconfig_t *config)
 
 
 
-YM_PAIR_SEQ(vbn_, sources, engine.input.vbn.sources,
+YM_PAIR_SEQ(vbn_, sources, 0, engine.input.vbn.sources,
             sizeof(si_t),
             si_init,
             si_fini,
     &YM_NAME(, _si)
 );
-YM_PAIR_INT(vbn_, bnm, engine.input.vbn.bnm);
+YM_PAIR_INT(vbn_, bnm, 0, engine.input.vbn.bnm);
 
-YM_PAIR_MAP(input_, vbn, engine.input.vbn,
+YM_PAIR_MAP(input_, vbn, 0, engine.input.vbn,
     &YM_NAME(vbn_, bnm),
     &YM_NAME(vbn_, sources)
 );
-YM_PAIR_STR(input_, qwe, engine.input.qwe);
-YM_PAIR_INT(input_, asd, engine.input.asd);
+YM_PAIR_STR(input_, qwe, 0, engine.input.qwe);
+YM_PAIR_INT(input_, asd, 0, engine.input.asd);
 
-YM_PAIR_INT0(, _zxc, int);
-YM_PAIR_SEQ(input_, zxc, engine.input.zxc,
+YM_PAIR_INT0(, _zxc, 0, int);
+YM_PAIR_SEQ(input_, zxc, 0, engine.input.zxc,
             sizeof(int),
             zxc_item_init,
             zxc_item_fini,
             &YM_NAME(, _zxc)
 );
 
-YM_PAIR_MAP(engine_, input, engine.input,
+YM_PAIR_MAP(engine_, input, 0, engine.input,
     &YM_NAME(input_, qwe),
     &YM_NAME(input_, asd),
     &YM_NAME(input_, zxc),
     &YM_NAME(input_, vbn)
 );
 
-YM_PAIR_BOOL(output_, aaa, engine.output.aaa);
-YM_PAIR_FLOAT(output_, c, engine.output.c);
-YM_PAIR_MAP(engine_, output, engine.output,
+YM_PAIR_BOOL(output_, aaa, 0, engine.output.aaa);
+YM_PAIR_FLOAT(output_, c, 0, engine.output.c);
+YM_PAIR_MAP(engine_, output, 0, engine.output,
     &YM_NAME(output_, aaa),
     &YM_NAME(output_, c),
     NULL);
 
-YM_PAIR_MAP(config_, engine, engine,
+YM_PAIR_MAP(config_, engine, 0, engine,
     &YM_NAME(engine_, input),
     &YM_NAME(engine_, output)
 );
 
-YM_PAIR_MAP0(, config,
+YM_PAIR_MAP0(, config, 0,
     &YM_NAME(config_, engine)
 );
 
