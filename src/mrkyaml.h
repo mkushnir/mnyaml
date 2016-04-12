@@ -758,8 +758,8 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
             }                                                  \
         }                                                      \
     }                                                          \
-    free(tmp);                                                 \
 end:                                                           \
+    free(tmp);                                                 \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
