@@ -580,7 +580,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
-    /*TRACE("v=%s", (*v)->data); */                            \
+    /*TRACE("v=%s", BDATA(*v)); */                             \
     return 0;                                                  \
 }                                                              \
 
@@ -590,7 +590,7 @@ static int YM_FINI(scope, name)(void *data)    \
 {                                              \
     bytes_t **v = data;                        \
 /*    TRACE("v=%p (str)", v);                  \
-    TRACE("v=%s (str)", (*v)->data) */;        \
+    TRACE("v=%s (str)", BDATA(*v)) */;         \
     BYTES_DECREF(v);                           \
     return 0;                                  \
 }                                              \
@@ -607,12 +607,12 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
     return bytestream_nprintf(bs,                      \
                               32 + (*v)->sz,           \
                               "'%s'",                  \
-                              (*v)->data);             \
+                              BDATA(*v));              \
 }                                                      \
 
 
 #ifdef YM_CMP_DEBUG
-#define YM_CMP_DEBUG_STR0(n, res) if(res) TRACE("%s/%s", (*va)->data, (*vb)->data);
+#define YM_CMP_DEBUG_STR0(n, res) if(res) TRACE("%s/%s", BDATA(*va), BDATA(*vb));
 #else
 #define YM_CMP_DEBUG_STR0(n, res)
 #endif
@@ -667,7 +667,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
-    /*TRACE("v=%s", (*v)->data); */                            \
+    /*TRACE("v=%s", BDATA(*v)); */                             \
     return 0;                                                  \
 }                                                              \
 
@@ -711,7 +711,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
-    /*TRACE("v=%s", (*v)->data); */                            \
+    /*TRACE("v=%s", BDATA(*v)); */                             \
     return 0;                                                  \
 }                                                              \
 
@@ -763,7 +763,7 @@ end:                                                           \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
-    /*TRACE("v=%s", (*v)->data); */                            \
+    /*TRACE("v=%s", BDATA(*v)); */                             \
     return 0;                                                  \
 }                                                              \
 
@@ -797,7 +797,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
-    /*TRACE("v=%s", (*v)->data); */                            \
+    /*TRACE("v=%s", BDATA(*v)); */                             \
     return 0;                                                  \
 }                                                              \
 
@@ -831,7 +831,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
-    /*TRACE("v=%s", (*v)->data); */                            \
+    /*TRACE("v=%s", BDATA(*v)); */                             \
     return 0;                                                  \
 }                                                              \
 
@@ -873,7 +873,7 @@ end:                                                           \
     BYTES_DECREF(v);                                           \
     *v = bytes_new_from_str(ptr);                              \
     BYTES_INCREF(*v);                                          \
-    /*TRACE("v=%s", (*v)->data); */                            \
+    /*TRACE("v=%s", BDATA(*v)); */                             \
     return 0;                                                  \
 }                                                              \
 
@@ -884,7 +884,7 @@ static int YM_FINI(scope, name)(void *data)    \
     YM_CONFIG_TYPE *root = data;               \
     __typeof__(&root->n) v = &root->n;         \
 /*    TRACE("v=%p (str)", v);                  \
-    TRACE("v=%s (str)", (*v)->data) */;        \
+    TRACE("v=%s (str)", BDATA(*v)) */;         \
     BYTES_DECREF(v);                           \
     return 0;                                  \
 }                                              \
@@ -902,12 +902,12 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
     return bytestream_nprintf(bs,                      \
                               32 + (*v)->sz,           \
                               "'%s'",                  \
-                              (*v)->data);             \
+                              BDATA(*v));              \
 }                                                      \
 
 
 #ifdef YM_CMP_DEBUG
-#define YM_CMP_DEBUG_STR(n, res) if(res) TRACE("%s/%s", ra->n->data, rb->n->data);
+#define YM_CMP_DEBUG_STR(n, res) if(res) TRACE("%s/%s", BDATA(ra->n), BDATA(rb->n));
 #else
 #define YM_CMP_DEBUG_STR(n, res)
 #endif
