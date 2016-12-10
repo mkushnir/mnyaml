@@ -212,7 +212,7 @@ ym_traverse_nodes(yaml_document_t *doc,
                 if (strcmp(ninfo->tag, (char *)node->tag) == 0) {
                     yaml_node_item_t *p;
                     ym_node_info_t *ninfo_item;
-                    array_t *a;
+                    mnarray_t *a;
 
                     ninfo_item = ninfo->subs[0];
                     if (ninfo_item == NULL) {
@@ -377,17 +377,17 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
 {
     int res;
     ym_node_info_t **ni;
-    bytes_t *tmp;
-    bytes_t *saved_prefix;
+    mnbytes_t *tmp;
+    mnbytes_t *saved_prefix;
 
     assert(tctx->prefix != NULL);
     saved_prefix = tctx->prefix;
 
     res = 0;
     if (strcmp(ninfo->tag, YAML_SEQ_TAG) == 0) {
-        array_t *a;
+        mnarray_t *a;
         void *pdata;
-        array_iter_t it;
+        mnarray_iter_t it;
 
 
         ni = &ninfo->subs[0];
@@ -500,9 +500,9 @@ int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *tctx,
 
     res = 0;
     if (strcmp(ninfo->tag, YAML_SEQ_TAG) == 0) {
-        array_t *ara, *arb;
+        mnarray_t *ara, *arb;
         void *pa, *pb;
-        array_iter_t it;
+        mnarray_iter_t it;
 
         ni = &ninfo->subs[0];
         ara = ninfo->addr(a);

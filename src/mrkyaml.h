@@ -88,7 +88,7 @@ typedef struct _ym_node_info {
     char *name;
     int (*init)(void *, yaml_node_t *);
     int (*fini)(void *);
-    ssize_t (*str)(bytestream_t *, void *);
+    ssize_t (*str)(mnbytestream_t *, void *);
     int (*cmp)(void *, void *);
     void *(*addr)(void *);
 #define YM_FLAG_IGNORE_UNKNOWN_SUBNODES (0x01)
@@ -101,7 +101,7 @@ typedef struct _ym_node_info_traverse_ctx {
     const char *nsep;
     const char *sub0;
     const char *sub1;
-    bytes_t *prefix;
+    mnbytes_t *prefix;
 } ym_node_info_traverse_ctx_t;
 
 
@@ -200,7 +200,7 @@ YM_FINI(scope, name)(void *data)                               \
 
 #define YM_STR_BOOL(scope, name, n)                    \
 static ssize_t                                         \
-YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 {                                                      \
     YM_CONFIG_TYPE *root = data;                       \
     __typeof__(&root->n) v = &root->n;                 \
@@ -270,7 +270,7 @@ static int YM_FINI(scope, name)(void *data)                            \
 
 #define YM_STR_INT0(scope, name, ty)                   \
 static ssize_t                                         \
-YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 {                                                      \
     ty *v = data;                                      \
     return bytestream_nprintf(bs,                      \
@@ -404,7 +404,7 @@ static int YM_FINI(scope, name)(void *data)                            \
 
 #define YM_STR_INT(scope, name, n)                     \
 static ssize_t                                         \
-YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 {                                                      \
     YM_CONFIG_TYPE *root = data;                       \
     __typeof__(&root->n) v = &root->n;                 \
@@ -417,7 +417,7 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 
 #define YM_STR_ENUM(scope, name, n, en)                        \
 static ssize_t                                                 \
-YM_STR(scope, name)(bytestream_t *bs, void *data)              \
+YM_STR(scope, name)(mnbytestream_t *bs, void *data)              \
 {                                                              \
     YM_CONFIG_TYPE *root = data;                               \
     __typeof__(&root->n) v = &root->n;                         \
@@ -532,7 +532,7 @@ static int YM_FINI(scope, name)(void *data)                            \
 
 #define YM_STR_FLOAT(scope, name, n)                   \
 static ssize_t                                         \
-YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 {                                                      \
     YM_CONFIG_TYPE *root = data;                       \
     __typeof__(&root->n) v = &root->n;                 \
@@ -561,13 +561,13 @@ YM_CMP(scope, name)(void *a, void *b)                  \
 
 
 /*
- * str0 (bytes_t *)
+ * str0 (mnbytes_t *)
  */
 #define YM_INIT_STR0(scope, name)                              \
 static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 {                                                              \
     int res;                                                   \
-    bytes_t **v = data;                                        \
+    mnbytes_t **v = data;                                        \
     char *ptr;                                                 \
     if ((res = ym_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
         TRACE("expected %s found %s",                          \
@@ -588,7 +588,7 @@ static int YM_INIT(scope, name)(void *data, yaml_node_t *node) \
 #define YM_FINI_STR0(scope, name)              \
 static int YM_FINI(scope, name)(void *data)    \
 {                                              \
-    bytes_t **v = data;                        \
+    mnbytes_t **v = data;                        \
 /*    TRACE("v=%p (str)", v);                  \
     TRACE("v=%s (str)", BDATA(*v)) */;         \
     BYTES_DECREF(v);                           \
@@ -598,9 +598,9 @@ static int YM_FINI(scope, name)(void *data)    \
 
 #define YM_STR_STR0(scope, name)                       \
 static ssize_t                                         \
-YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 {                                                      \
-    bytes_t **v = data;                                \
+    mnbytes_t **v = data;                                \
     if (*v == NULL) {                                  \
         return 0;                                      \
     }                                                  \
@@ -622,8 +622,8 @@ YM_STR(scope, name)(bytestream_t *bs, void *data)      \
 static int                             \
 YM_CMP(scope, name)(void *a, void *b)  \
 {                                      \
-    bytes_t **va = a;                  \
-    bytes_t **vb = b;                  \
+    mnbytes_t **va = a;                  \
+    mnbytes_t **vb = b;                  \
     if (*va == NULL) {                 \
         if (*vb == NULL) {             \
             return 0;                  \
@@ -892,7 +892,7 @@ static int YM_FINI(scope, name)(void *data)    \
 
 #define YM_STR_STR(scope, name, n)                     \
 static ssize_t                                         \
-YM_STR(scope, name)(bytestream_t *bs, void *data)      \
+YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 {                                                      \
     YM_CONFIG_TYPE *root = data;                       \
     __typeof__(&root->n) v = &root->n;                 \
@@ -980,7 +980,7 @@ static int YM_FINI(scope, name)(void *data)                            \
 
 #define YM_STR_SEQ(scope, name, n)                             \
 static ssize_t                                                 \
-YM_STR(scope, name)(UNUSED bytestream_t *bs, UNUSED void *data)\
+YM_STR(scope, name)(UNUSED mnbytestream_t *bs, UNUSED void *data)\
 {                                                              \
     return 0;                                                  \
 }                                                              \
@@ -1015,7 +1015,7 @@ static int YM_FINI(scope, name)(UNUSED void *data)                             \
 
 #define YM_STR_MAP(scope, name, n)                             \
 static ssize_t                                                 \
-YM_STR(scope, name)(UNUSED bytestream_t *bs, UNUSED void *data)\
+YM_STR(scope, name)(UNUSED mnbytestream_t *bs, UNUSED void *data)\
 {                                                              \
     return 0;                                                  \
 }                                                              \
@@ -1168,7 +1168,7 @@ YM_INIT_STR0(scope, name)                              \
 YM_FINI_STR0(scope, name)                              \
 YM_STR_STR0(scope, name)                               \
 YM_CMP_STR0(scope, name)                               \
-YM_ADDR_TY0(scope, name, bytes_t *)                    \
+YM_ADDR_TY0(scope, name, mnbytes_t *)                    \
 YM_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
 
 
@@ -1364,7 +1364,7 @@ int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *,
 int ym_node_info_cmp_data(ym_node_info_t *, void *, void *);
 
 typedef struct _ym_read_params {
-    bytestream_t bs;
+    mnbytestream_t bs;
     int fd;
 } ym_read_params_t;
 int ym_readfd(void *, unsigned char *, size_t, size_t *);

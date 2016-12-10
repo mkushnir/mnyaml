@@ -59,13 +59,13 @@ si_fini(UNUSED si_t *si)
 typedef struct {
     struct {
         struct {
-            bytes_t *qwe;
+            mnbytes_t *qwe;
             intmax_t asd;
             //char *b;
-            array_t zxc;
+            mnarray_t zxc;
             struct {
                 char bnm;
-                array_t sources;
+                mnarray_t sources;
             } vbn;
         } input;
         struct {
@@ -170,7 +170,7 @@ myconfig_t the_config;
 YM_PARSE_INTO(myconfig, &YM_NAME(, config), myconfig_t)
 
 
-static bytes_t _all = BYTES_INITIALIZER("all");
+static mnbytes_t _all = BYTES_INITIALIZER("all");
 
 static int
 mycb1(ym_node_info_traverse_ctx_t *tctx,
@@ -179,15 +179,15 @@ mycb1(ym_node_info_traverse_ctx_t *tctx,
       void *udata)
 {
         struct {
-            bytestream_t bs;
-            array_t prefixes;
+            mnbytestream_t bs;
+            mnarray_t prefixes;
         } *params;
 
     if (ninfo->str != NULL) {
         params = udata;
         UNUSED ssize_t res;
-        bytes_t **s;
-        array_iter_t it;
+        mnbytes_t **s;
+        mnarray_iter_t it;
         //TRACE("%s=%ld", tctx->prefix->data, ninfo->str(&params->bs, data));
         for (s = array_first(&params->prefixes, &it);
              s != NULL;
@@ -207,7 +207,7 @@ mycb1(ym_node_info_traverse_ctx_t *tctx,
 
 
 static int
-prefixes_fini_item(bytes_t **s)
+prefixes_fini_item(mnbytes_t **s)
 {
     BYTES_DECREF(s);
     return 0;
@@ -221,8 +221,8 @@ test1(int argc, char **argv)
         ym_node_info_traverse_ctx_t tctx;
         ym_read_params_t rparams;
         struct {
-            bytestream_t bs;
-            array_t prefixes;
+            mnbytestream_t bs;
+            mnarray_t prefixes;
         } pparams;
         int i;
 
@@ -239,12 +239,12 @@ test1(int argc, char **argv)
         bytestream_init(&pparams.bs, 1024);
         *SDATA(&pparams.bs, 0) = '\0';
         array_init(&pparams.prefixes,
-                   sizeof(bytes_t *),
+                   sizeof(mnbytes_t *),
                    0,
                    NULL,
                    (array_finalizer_t)prefixes_fini_item);
         for (i = 2; i < argc; ++i) {
-            bytes_t **s;
+            mnbytes_t **s;
             if ((s = array_incr(&pparams.prefixes)) == NULL) {
                 FAIL("array_incr");
             }
