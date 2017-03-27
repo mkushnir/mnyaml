@@ -30,7 +30,7 @@ testfoo_LDFLAGS = -L$(libdir) -lmrkcommon -L$(top_srcdir)/src/.libs -lmrkyaml
 #testfoo_LDFLAGS = -L$(top_srcdir)/src/.libs -lmrkyaml
 
 diag.c diag.h: diag.txt
-	$(AM_V_GEN) /bin/sh ./gen-diag mrkyaml
+	$(AM_V_GEN) cat diag.txt | sort -u | /bin/sh ./gen-diag mrkyaml
 
 testrun: all
 	for i in $(noinst_PROGRAMS); do if test -x ./$$i; then LD_LIBRARY_PATH=$(libdir) ./$$i; fi; done;
