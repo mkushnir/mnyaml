@@ -625,7 +625,7 @@ ym_readbs(void *udata, unsigned char *buf, size_t sz, size_t *nread)
     ym_read_params_t *params = udata;
     ssize_t n;
 
-    n = params->bs.read_more(&params->bs, params->fd, sz);
+    n = params->bs.read_more(&params->bs, (void *)(intptr_t)params->fd, sz);
     if (n > 0) {
         memcpy(buf, SPDATA(&params->bs), n);
         SADVANCEPOS(&params->bs, n);
