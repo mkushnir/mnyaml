@@ -217,15 +217,15 @@ YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #define YM_CMP_DEBUG_BOOL(n)
 #endif
 
-#define YM_CMP_BOOL(scope, name, n)                    \
-static int                                             \
-YM_CMP(scope, name)(void *a, void *b)                  \
-{                                                      \
-    YM_CONFIG_TYPE *ra = a;                            \
-    YM_CONFIG_TYPE *rb = b;                            \
-    YM_CMP_DEBUG_BOOL(n)                               \
-    return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
-}                                                      \
+#define YM_CMP_BOOL(scope, name, n)    \
+static int                             \
+YM_CMP(scope, name)(void *a, void *b)  \
+{                                      \
+    YM_CONFIG_TYPE *ra = a;            \
+    YM_CONFIG_TYPE *rb = b;            \
+    YM_CMP_DEBUG_BOOL(n)               \
+    return MNCMP(ra->n, rb->n);        \
+}                                      \
 
 
 /*
@@ -286,15 +286,15 @@ YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #define YM_CMP_DEBUG_INT0
 #endif
 
-#define YM_CMP_INT0(scope, name, ty)                   \
-static int                                             \
-YM_CMP(scope, name)(void *a, void *b)                  \
-{                                                      \
-    ty *va = a;                                        \
-    ty *vb = b;                                        \
-    YM_CMP_DEBUG_INT0                                  \
-    return *va > *vb ? 1 : *va < *vb ? -1 : 0;         \
-}                                                      \
+#define YM_CMP_INT0(scope, name, ty)   \
+static int                             \
+YM_CMP(scope, name)(void *a, void *b)  \
+{                                      \
+    ty *va = a;                        \
+    ty *vb = b;                        \
+    YM_CMP_DEBUG_INT0                  \
+    return MNCMP(*va, *vb);            \
+}                                      \
 
 
 /*
@@ -443,15 +443,15 @@ YM_STR(scope, name)(mnbytestream_t *bs, void *data)              \
 #define YM_CMP_DEBUG_INT(n)
 #endif
 
-#define YM_CMP_INT(scope, name, n)                     \
-static int                                             \
-YM_CMP(scope, name)(void *a, void *b)                  \
-{                                                      \
-    YM_CONFIG_TYPE *ra = a;                            \
-    YM_CONFIG_TYPE *rb = b;                            \
-    YM_CMP_DEBUG_INT(n)                                \
-    return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
-}                                                      \
+#define YM_CMP_INT(scope, name, n)     \
+static int                             \
+YM_CMP(scope, name)(void *a, void *b)  \
+{                                      \
+    YM_CONFIG_TYPE *ra = a;            \
+    YM_CONFIG_TYPE *rb = b;            \
+    YM_CMP_DEBUG_INT(n)                \
+    return MNCMP(ra->n, rb->n);        \
+}                                      \
 
 
 /*
@@ -549,15 +549,15 @@ YM_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #define YM_CMP_DEBUG_FLOAT(n)
 #endif
 
-#define YM_CMP_FLOAT(scope, name, n)                   \
-static int                                             \
-YM_CMP(scope, name)(void *a, void *b)                  \
-{                                                      \
-    YM_CONFIG_TYPE *ra = a;                            \
-    YM_CONFIG_TYPE *rb = b;                            \
-    YM_CMP_DEBUG_FLOAT(n)                              \
-    return ra->n > rb->n ? 1 : ra->n < rb->n ? -1 : 0; \
-}                                                      \
+#define YM_CMP_FLOAT(scope, name, n)   \
+static int                             \
+YM_CMP(scope, name)(void *a, void *b)  \
+{                                      \
+    YM_CONFIG_TYPE *ra = a;            \
+    YM_CONFIG_TYPE *rb = b;            \
+    YM_CMP_DEBUG_FLOAT(n)              \
+    return MNCMP(ra->n, rb->n);        \
+}                                      \
 
 
 /*
