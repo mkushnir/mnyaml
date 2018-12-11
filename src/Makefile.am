@@ -22,16 +22,27 @@ noinst_HEADERS =
 libmrkyaml_la_SOURCES = mrkyaml.c
 nodist_libmrkyaml_la_SOURCES = diag.c
 
+DEBUG_LD_FLAGS =
 if DEBUG
-DEBUG_FLAGS = -g -O0 @CC_DEBUG@
+DEBUG_CC_FLAGS = -g -O0 @CC_DEBUG@
+DEBUG_LD_FLAGS += -no-install
 else
-DEBUG_FLAGS = -DNDEBUG -O3
+DEBUG_CC_FLAGS = -DNDEBUG -O3 -fomit-frame-pointer
+if LTO
+DEBUG_CC_FLAGS += @CC_LTO@
+DEBUG_LD_FLAGS += @LD_LTO@
+endif
 endif
 
-libmrkyaml_la_CFLAGS = $(DEBUG_FLAGS) -Wall -Wextra -Werror -std=c99 @MRKCOMMON_LOCAL_CFLAGS@ @_GNU_SOURCE_MACRO@ -I$(top_srcdir)/src -I$(top_srcdir) -I$(includedir) @LIBYAML_CFLAGS@
+if ALLSTATIC
+libmrkyaml_la_LDFLAGS = -all-static
+else
+libmrkyaml_la_LDFLAGS =
+endif
 
-libmrkyaml_la_LDFLAGS = -version-info 0:0:0 -L$(libdir) -lmrkcommon -lmndiag @MRKCOMMON_LOCAL_LDFLAGS@ @LIBYAML_LDFLAGS@
-#libmrkyaml_la_LDFLAGS = -version-info 0:0:0
+libmrkyaml_la_CFLAGS = $(DEBUG_CC_FLAGS) -Wall -Wextra -Werror -std=c99 @_GNU_SOURCE_MACRO@ @_XOPEN_SOURCE_MACRO@ -I$(top_srcdir)/src -I$(top_srcdir) -I$(includedir)
+libmrkyaml_la_LDFLAGS += $(DEBUG_LD_FLAGS) -version-info 0:0:0 -L$(libdir)
+libmrkyaml_la_LIBADD = -lmrkcommon -lmndiag -lyaml
 
 SUBDIRS = .
 
