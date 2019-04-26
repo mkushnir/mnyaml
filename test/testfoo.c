@@ -19,19 +19,19 @@ const char *_malloc_options = "AJ";
 
 
 
-#define YM_CONFIG_TYPE si_t
+#define MNY_CONFIG_TYPE si_t
 
 typedef struct {
     int abc;
     int bcd;
 } si_t;
 
-YM_PAIR_INT(si_, abc, 0, abc);
-YM_PAIR_INT(si_, bcd, 0, bcd);
+MNY_PAIR_INT(si_, abc, 0, abc);
+MNY_PAIR_INT(si_, bcd, 0, bcd);
 
-YM_PAIR_MAP0(, _si, 0,
-    &YM_NAME(si_, abc),
-    &YM_NAME(si_, bcd)
+MNY_PAIR_MAP0(, _si, 0,
+    &MNY_NAME(si_, abc),
+    &MNY_NAME(si_, bcd)
 );
 
 
@@ -53,8 +53,8 @@ si_fini(UNUSED si_t *si)
 }
 
 
-#undef YM_CONFIG_TYPE
-#define YM_CONFIG_TYPE myconfig_t
+#undef MNY_CONFIG_TYPE
+#define MNY_CONFIG_TYPE myconfig_t
 
 typedef struct {
     struct {
@@ -117,64 +117,64 @@ myconfig_fini(myconfig_t *config)
 
 
 
-YM_PAIR_SEQ(vbn_, sources, 0, engine.input.vbn.sources,
+MNY_PAIR_SEQ(vbn_, sources, 0, engine.input.vbn.sources,
             sizeof(si_t),
             si_init,
             si_fini,
-    &YM_NAME(, _si)
+    &MNY_NAME(, _si)
 );
-YM_PAIR_INT(vbn_, bnm, 0, engine.input.vbn.bnm);
+MNY_PAIR_INT(vbn_, bnm, 0, engine.input.vbn.bnm);
 
-YM_PAIR_MAP(input_, vbn, 0, engine.input.vbn,
-    &YM_NAME(vbn_, bnm),
-    &YM_NAME(vbn_, sources)
+MNY_PAIR_MAP(input_, vbn, 0, engine.input.vbn,
+    &MNY_NAME(vbn_, bnm),
+    &MNY_NAME(vbn_, sources)
 );
-YM_PAIR_STR(input_, qwe, 0, engine.input.qwe);
-YM_PAIR_INT(input_, asd, 0, engine.input.asd);
+MNY_PAIR_STR(input_, qwe, 0, engine.input.qwe);
+MNY_PAIR_INT(input_, asd, 0, engine.input.asd);
 
-YM_PAIR_INT0(, _zxc, 0, int);
-YM_PAIR_SEQ(input_, zxc, 0, engine.input.zxc,
+MNY_PAIR_INT0(, _zxc, 0, int);
+MNY_PAIR_SEQ(input_, zxc, 0, engine.input.zxc,
             sizeof(int),
             zxc_item_init,
             zxc_item_fini,
-            &YM_NAME(, _zxc)
+            &MNY_NAME(, _zxc)
 );
 
-YM_PAIR_MAP(engine_, input, 0, engine.input,
-    &YM_NAME(input_, qwe),
-    &YM_NAME(input_, asd),
-    &YM_NAME(input_, zxc),
-    &YM_NAME(input_, vbn)
+MNY_PAIR_MAP(engine_, input, 0, engine.input,
+    &MNY_NAME(input_, qwe),
+    &MNY_NAME(input_, asd),
+    &MNY_NAME(input_, zxc),
+    &MNY_NAME(input_, vbn)
 );
 
-YM_PAIR_BOOL(output_, aaa, 0, engine.output.aaa);
-YM_PAIR_FLOAT(output_, c, 0, engine.output.c);
-YM_PAIR_MAP(engine_, output, 0, engine.output,
-    &YM_NAME(output_, aaa),
-    &YM_NAME(output_, c),
+MNY_PAIR_BOOL(output_, aaa, 0, engine.output.aaa);
+MNY_PAIR_FLOAT(output_, c, 0, engine.output.c);
+MNY_PAIR_MAP(engine_, output, 0, engine.output,
+    &MNY_NAME(output_, aaa),
+    &MNY_NAME(output_, c),
     NULL);
 
-YM_PAIR_MAP(config_, engine, 0, engine,
-    &YM_NAME(engine_, input),
-    &YM_NAME(engine_, output)
+MNY_PAIR_MAP(config_, engine, 0, engine,
+    &MNY_NAME(engine_, input),
+    &MNY_NAME(engine_, output)
 );
 
-YM_PAIR_MAP0(, config, 0,
-    &YM_NAME(config_, engine)
+MNY_PAIR_MAP0(, config, 0,
+    &MNY_NAME(config_, engine)
 );
 
 
 myconfig_t the_config;
 
 
-YM_PARSE_INTO(myconfig, &YM_NAME(, config), myconfig_t)
+MNY_PARSE_INTO(myconfig, &MNY_NAME(, config), myconfig_t)
 
 
 static mnbytes_t _all = BYTES_INITIALIZER("all");
 
 static int
-mycb1(ym_node_info_traverse_ctx_t *tctx,
-      ym_node_info_t *ninfo,
+mycb1(mny_node_info_traverse_ctx_t *tctx,
+      mny_node_info_t *ninfo,
       void *data,
       void *udata)
 {
@@ -218,8 +218,8 @@ static void
 test1(int argc, char **argv)
 {
     if (argc > 1) {
-        ym_node_info_traverse_ctx_t tctx;
-        ym_read_params_t rparams;
+        mny_node_info_traverse_ctx_t tctx;
+        mny_read_params_t rparams;
         struct {
             mnbytestream_t bs;
             mnarray_t prefixes;
@@ -231,11 +231,11 @@ test1(int argc, char **argv)
         }
 
         myconfig_init(&the_config);
-        myconfig_parse_into(&the_config, ym_readfd, &rparams);
+        myconfig_parse_into(&the_config, mny_readfd, &rparams);
         close(rparams.fd);
 
-        //ym_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
-        ym_node_info_traverse_ctx_init(&tctx, "_", "_", "_", "");
+        //mny_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
+        mny_node_info_traverse_ctx_init(&tctx, "_", "_", "_", "");
         bytestream_init(&pparams.bs, 1024);
         *SDATA(&pparams.bs, 0) = '\0';
         array_init(&pparams.prefixes,
@@ -250,18 +250,18 @@ test1(int argc, char **argv)
             }
             *s = bytes_new_from_str(argv[i]);
         }
-        (void)ym_node_info_traverse(&tctx,
-                                    //&YM_NAME(, config),
-                                    &YM_NAME(config_, engine),
+        (void)mny_node_info_traverse(&tctx,
+                                    //&MNY_NAME(, config),
+                                    &MNY_NAME(config_, engine),
                                     &the_config,
                                     mycb1,
                                     &pparams);
         TRACEC("%s", SDATA(&pparams.bs, 0));
         array_fini(&pparams.prefixes);
         bytestream_fini(&pparams.bs);
-        ym_node_info_traverse_ctx_fini(&tctx);
+        mny_node_info_traverse_ctx_fini(&tctx);
 
-        ym_node_info_fini_data(&YM_NAME(, config), &the_config);
+        mny_node_info_fini_data(&MNY_NAME(, config), &the_config);
         myconfig_fini(&the_config);
     }
 }

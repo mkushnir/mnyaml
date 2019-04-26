@@ -20,14 +20,14 @@
 #include "diag.h"
 
 
-static int ym_check_node_subs(yaml_document_t *,
-                              ym_node_info_t *,
+static int mny_check_node_subs(yaml_document_t *,
+                              mny_node_info_t *,
                               yaml_node_t *,
                               yaml_node_t *,
                               void *);
 
 static int
-ym_name_cmp(const char *a, const char *b, size_t sz)
+mny_name_cmp(const char *a, const char *b, size_t sz)
 {
     size_t i;
     int diff;
@@ -90,13 +90,13 @@ dump_yaml_node(yaml_document_t *doc, yaml_node_t *node)
 
 
 static int
-ym_check_node_subs(yaml_document_t *doc,
-                   ym_node_info_t *ninfo,
+mny_check_node_subs(yaml_document_t *doc,
+                   mny_node_info_t *ninfo,
                    yaml_node_t *key,
                    yaml_node_t *value,
                    void *data)
 {
-    ym_node_info_t **nsub;
+    mny_node_info_t **nsub;
     int res;
 
     //TRACE("checking subs in %s", ninfo->name);
@@ -112,15 +112,15 @@ ym_check_node_subs(yaml_document_t *doc,
 
         //TRACE("%s/%s", key->data.scalar.value, (*nsub)->name);
         // XXX map "-" to "_"
-        if (ym_name_cmp((char *)key->data.scalar.value,
+        if (mny_name_cmp((char *)key->data.scalar.value,
                         (*nsub)->name,
                         key->data.scalar.length + 1) == 0) {
-            if ((res = ym_traverse_nodes(doc, *nsub, value, data)) == 0 ||
-                res == YM_CAST_TAG_NF ||
-                res == YM_CHECK_NODE_NF ||
-                res == YM_TRAVERSE_NODES_NF ||
-                res == YM_CHECK_NODE_SEQ_NF ||
-                res == YM_INIT_INVALID) {
+            if ((res = mny_traverse_nodes(doc, *nsub, value, data)) == 0 ||
+                res == MNY_CAST_TAG_NF ||
+                res == MNY_CHECK_NODE_NF ||
+                res == MNY_TRAVERSE_NODES_NF ||
+                res == MNY_CHECK_NODE_SEQ_NF ||
+                res == MNY_INIT_INVALID) {
                 return res;
             }
         }
@@ -129,11 +129,11 @@ ym_check_node_subs(yaml_document_t *doc,
     for (nsub = ninfo->subs; *nsub != NULL; ++nsub) {
         TRACEC("'%s', ", (*nsub)->name);
     }
-    if (ninfo->flags & YM_FLAG_IGNORE_UNKNOWN_SUBNODES) {
+    if (ninfo->flags & MNY_FLAG_IGNORE_UNKNOWN_SUBNODES) {
         res = 0;
         TRACEC("found '%s' -- will be ignored\n", key->data.scalar.value);
     } else {
-        res = YM_CHECK_NODE_NF;
+        res = MNY_CHECK_NODE_NF;
         TRACEC("found '%s' -- stopped\n", key->data.scalar.value);
     }
     return res;
@@ -141,7 +141,7 @@ ym_check_node_subs(yaml_document_t *doc,
 
 
 int
-ym_can_cast_tag(yaml_node_t *node, char *tag)
+mny_can_cast_tag(yaml_node_t *node, char *tag)
 {
     if (strcmp((char *)node->tag, tag) == 0) {
         return 0;
@@ -162,13 +162,13 @@ ym_can_cast_tag(yaml_node_t *node, char *tag)
             }
         }
     }
-    return YM_CAST_TAG_NF;
+    return MNY_CAST_TAG_NF;
 }
 
 
 int
-ym_traverse_nodes(yaml_document_t *doc,
-                   ym_node_info_t *ninfo,
+mny_traverse_nodes(yaml_document_t *doc,
+                   mny_node_info_t *ninfo,
                    yaml_node_t *node,
                    void *data)
 {
@@ -193,9 +193,9 @@ ym_traverse_nodes(yaml_document_t *doc,
                 return 1;
             }
             if (strcmp(deftag, ninfo->tag) != 0) {
-                if (ym_can_cast_tag(node, ninfo->tag) != 0) {
+                if (mny_can_cast_tag(node, ninfo->tag) != 0) {
                     TRACE("expected tag: %s, found %s", ninfo->tag, node->tag);
-                    return YM_TRAVERSE_NODES_NF;
+                    return MNY_TRAVERSE_NODES_NF;
                 }
             }
             /*
@@ -211,14 +211,14 @@ ym_traverse_nodes(yaml_document_t *doc,
             if (strcmp(deftag, (char *)node->tag) == 0) {
                 if (strcmp(ninfo->tag, (char *)node->tag) == 0) {
                     yaml_node_item_t *p;
-                    ym_node_info_t *ninfo_item;
+                    mny_node_info_t *ninfo_item;
                     mnarray_t *a;
 
                     ninfo_item = ninfo->subs[0];
                     if (ninfo_item == NULL) {
                         TRACE("expected sequence node info for %s, got NULL",
                               ninfo->name);
-                        return YM_CHECK_NODE_SEQ_NF;
+                        return MNY_CHECK_NODE_SEQ_NF;
                     }
 
                     a = ninfo->addr(data);
@@ -237,7 +237,7 @@ ym_traverse_nodes(yaml_document_t *doc,
 
                         //TRACE("ni=%p p=%d oi=%p", ninfo_item, *p, data_item);
 
-                        if ((res = ym_traverse_nodes(doc,
+                        if ((res = mny_traverse_nodes(doc,
                                                      ninfo_item,
                                                      item,
                                                      data_item)) != 0) {
@@ -271,7 +271,7 @@ ym_traverse_nodes(yaml_document_t *doc,
                         key = yaml_document_get_node(doc, p->key);
                         value = yaml_document_get_node(doc, p->value);
 
-                        if ((res = ym_check_node_subs(doc,
+                        if ((res = mny_check_node_subs(doc,
                                                       ninfo,
                                                       key,
                                                       value,
@@ -303,9 +303,9 @@ ym_traverse_nodes(yaml_document_t *doc,
     }
 
     if (strcmp(deftag, ninfo->tag) != 0) {
-        if (ym_can_cast_tag(node, ninfo->tag) != 0) {
+        if (mny_can_cast_tag(node, ninfo->tag) != 0) {
             TRACE("node %s expected tag: %s, found %s", ninfo->name, ninfo->tag, node->tag);
-            return YM_TRAVERSE_NODES_NF;
+            return MNY_TRAVERSE_NODES_NF;
         }
     }
     //TRACE("deftag=%s ninfo->tag=%s node->tag=%s", deftag, ninfo->tag, node->tag);
@@ -321,15 +321,15 @@ ym_traverse_nodes(yaml_document_t *doc,
 
 
 int
-ym_node_info_fini_data(ym_node_info_t *ninfo, void *data)
+mny_node_info_fini_data(mny_node_info_t *ninfo, void *data)
 {
     int res;
-    ym_node_info_t **nsub;
+    mny_node_info_t **nsub;
 
     //TRACE("ninfo=%p fini(%p) for %s data=%p", ninfo, ninfo->fini, ninfo->name, data);
     if (strcmp(ninfo->tag, YAML_SEQ_TAG) != 0) {
         for (nsub = ninfo->subs; *nsub != NULL; ++nsub) {
-            if ((res = ym_node_info_fini_data(*nsub, data)) != 0) {
+            if ((res = mny_node_info_fini_data(*nsub, data)) != 0) {
                 return res;
             }
         }
@@ -347,7 +347,7 @@ ym_node_info_fini_data(ym_node_info_t *ninfo, void *data)
 
 
 void
-ym_node_info_traverse_ctx_init(ym_node_info_traverse_ctx_t *tctx,
+mny_node_info_traverse_ctx_init(mny_node_info_traverse_ctx_t *tctx,
                                const char *nsep,
                                const char *sub0,
                                const char *sub1,
@@ -362,21 +362,21 @@ ym_node_info_traverse_ctx_init(ym_node_info_traverse_ctx_t *tctx,
 
 
 void
-ym_node_info_traverse_ctx_fini(ym_node_info_traverse_ctx_t *tctx)
+mny_node_info_traverse_ctx_fini(mny_node_info_traverse_ctx_t *tctx)
 {
     BYTES_DECREF(&tctx->prefix);
 }
 
 
 int
-ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
-                      ym_node_info_t *ninfo,
+mny_node_info_traverse(mny_node_info_traverse_ctx_t *tctx,
+                      mny_node_info_t *ninfo,
                       void *data,
-                      ym_node_info_traverser_t cb,
+                      mny_node_info_traverser_t cb,
                       void *udata)
 {
     int res;
-    ym_node_info_t **ni;
+    mny_node_info_t **ni;
     mnbytes_t *tmp;
     mnbytes_t *saved_prefix;
 
@@ -419,7 +419,7 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
             }
             tctx->prefix = tmp;
 
-            if ((res = ym_node_info_traverse(tctx,
+            if ((res = mny_node_info_traverse(tctx,
                                              *ni,
                                              pdata,
                                              cb,
@@ -451,7 +451,7 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
         tctx->prefix = tmp;
 
         for (ni = ninfo->subs; *ni != NULL; ++ni) {
-            if ((res = ym_node_info_traverse(tctx,
+            if ((res = mny_node_info_traverse(tctx,
                                              *ni,
                                              data,
                                              cb,
@@ -489,14 +489,14 @@ ym_node_info_traverse(ym_node_info_traverse_ctx_t *tctx,
 }
 
 
-int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *tctx,
-                           ym_node_info_t *ninfo,
+int mny_node_info_traverse2(mny_node_info_traverse_ctx_t *tctx,
+                           mny_node_info_t *ninfo,
                            void *a,
                            void *b,
-                           ym_node_info_traverser2_t cb,
+                           mny_node_info_traverser2_t cb,
                            void *udata) {
     int res;
-    ym_node_info_t **ni;
+    mny_node_info_t **ni;
 
     res = 0;
     if (strcmp(ninfo->tag, YAML_SEQ_TAG) == 0) {
@@ -515,7 +515,7 @@ int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *tctx,
             if (pb == NULL) {
                 break;
             }
-            if ((res = ym_node_info_traverse2(tctx,
+            if ((res = mny_node_info_traverse2(tctx,
                                               *ni,
                                               pa,
                                               pb,
@@ -526,7 +526,7 @@ int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *tctx,
         }
     } else {
         for (ni = ninfo->subs; *ni != NULL; ++ni) {
-            if ((res = ym_node_info_traverse2(tctx,
+            if ((res = mny_node_info_traverse2(tctx,
                                               *ni,
                                               a,
                                               b,
@@ -545,14 +545,14 @@ int ym_node_info_traverse2(ym_node_info_traverse_ctx_t *tctx,
 }
 
 static int
-cmp_cb(UNUSED ym_node_info_traverse_ctx_t *tctx,
-       ym_node_info_t *ninfo,
+cmp_cb(UNUSED mny_node_info_traverse_ctx_t *tctx,
+       mny_node_info_t *ninfo,
        void *a,
        void *b,
        UNUSED void *udata)
 {
     if (ninfo->cmp != NULL) {
-#ifdef YM_CMP_DEBUG
+#ifdef MNY_CMP_DEBUG
         int res;
         res = ninfo->cmp(a, b);
         if (res != 0) {
@@ -568,14 +568,14 @@ cmp_cb(UNUSED ym_node_info_traverse_ctx_t *tctx,
 
 
 int
-ym_node_info_cmp_data(ym_node_info_t *ninfo, void *a, void *b)
+mny_node_info_cmp_data(mny_node_info_t *ninfo, void *a, void *b)
 {
-    ym_node_info_traverse_ctx_t tctx;
+    mny_node_info_traverse_ctx_t tctx;
     int res;
 
-    ym_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
-    res = ym_node_info_traverse2(&tctx, ninfo, a, b, cmp_cb, NULL);
-    ym_node_info_traverse_ctx_fini(&tctx);
+    mny_node_info_traverse_ctx_init(&tctx, ".", "[", "]", "");
+    res = mny_node_info_traverse2(&tctx, ninfo, a, b, cmp_cb, NULL);
+    mny_node_info_traverse_ctx_fini(&tctx);
     return res;
 }
 
@@ -584,7 +584,7 @@ ym_node_info_cmp_data(ym_node_info_t *ninfo, void *a, void *b)
 
 int
 traverse_yaml_document(yaml_document_t *doc,
-                       ym_node_traverser_t cb,
+                       mny_node_traverser_t cb,
                        void *udata)
 {
     yaml_node_t *node;
@@ -601,9 +601,9 @@ traverse_yaml_document(yaml_document_t *doc,
 
 
 int
-ym_readfd(void *udata, unsigned char *buf, size_t sz, size_t *nread)
+mny_readfd(void *udata, unsigned char *buf, size_t sz, size_t *nread)
 {
-    ym_read_params_t *params = udata;
+    mny_read_params_t *params = udata;
     ssize_t n;
     int res;
 
@@ -620,9 +620,9 @@ ym_readfd(void *udata, unsigned char *buf, size_t sz, size_t *nread)
 
 
 int
-ym_readbs(void *udata, unsigned char *buf, size_t sz, size_t *nread)
+mny_readbs(void *udata, unsigned char *buf, size_t sz, size_t *nread)
 {
-    ym_read_params_t *params = udata;
+    mny_read_params_t *params = udata;
     ssize_t n;
 
     n = params->bs.read_more(&params->bs, (void *)(intptr_t)params->fd, sz);
