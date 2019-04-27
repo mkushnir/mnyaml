@@ -178,10 +178,10 @@ mycb1(mny_node_info_traverse_ctx_t *tctx,
       void *data,
       void *udata)
 {
-        struct {
-            mnbytestream_t bs;
-            mnarray_t prefixes;
-        } *params;
+    struct {
+        mnbytestream_t bs;
+        mnarray_t prefixes;
+    } *params;
 
     if (ninfo->str != NULL) {
         params = udata;

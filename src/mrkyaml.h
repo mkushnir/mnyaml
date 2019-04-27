@@ -1,6 +1,10 @@
 #ifndef MRKYAML_H_DEFINED
 #define MRKYAML_H_DEFINED
 
+/*
+ * https://yaml.org/type/
+ */
+
 #include <libgen.h>
 #include <yaml.h>
 
@@ -111,15 +115,15 @@ typedef struct _mny_enum {
 } mny_enum_t;
 
 typedef int (*mny_node_info_traverser_t)(mny_node_info_traverse_ctx_t *,
-                                        mny_node_info_t *,
-                                        void *,
-                                        void *);
+                                         mny_node_info_t *,
+                                         void *,
+                                         void *);
 
 typedef int (*mny_node_info_traverser2_t)(mny_node_info_traverse_ctx_t *,
-                                        mny_node_info_t *,
-                                        void *,
-                                        void *,
-                                        void *);
+                                          mny_node_info_t *,
+                                          void *,
+                                          void *,
+                                          void *);
 
 #define MNY_NAME(scope, name) _mny_ ## scope ## name
 #define MNY_INIT(scope, name) _mny_ ## scope ## name ## _init
@@ -129,19 +133,19 @@ typedef int (*mny_node_info_traverser2_t)(mny_node_info_traverse_ctx_t *,
 #define MNY_ADDR(scope, name) _mny_ ## scope ## name ## _addr
 
 
-#define MNY_ADDR_TY(scope, name, n)     \
+#define MNY_ADDR_TY(scope, name, n)    \
 static void *                          \
-MNY_ADDR(scope, name)(void *data)       \
+MNY_ADDR(scope, name)(void *data)      \
 {                                      \
-    MNY_CONFIG_TYPE *root = data;       \
+    MNY_CONFIG_TYPE *root = data;      \
     __typeof__(&root->n) v = &root->n; \
     return (void *)v;                  \
 }                                      \
 
 
-#define MNY_ADDR_TY0(scope, name, ty)   \
+#define MNY_ADDR_TY0(scope, name, ty)  \
 static void *                          \
-MNY_ADDR(scope, name)(void *data)       \
+MNY_ADDR(scope, name)(void *data)      \
 {                                      \
     return data;                       \
 }                                      \
@@ -151,14 +155,14 @@ MNY_ADDR(scope, name)(void *data)       \
 /*
  * boolean
  */
-#define MNY_INIT_BOOL(scope, name, n)                           \
+#define MNY_INIT_BOOL(scope, name, n)                          \
 static int                                                     \
-MNY_INIT(scope, name)(void *data, yaml_node_t *node)            \
+MNY_INIT(scope, name)(void *data, yaml_node_t *node)           \
 {                                                              \
     int res;                                                   \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
-    if ((res = mny_can_cast_tag(node, YAML_BOOL_TAG)) != 0) {   \
+    if ((res = mny_can_cast_tag(node, YAML_BOOL_TAG)) != 0) {  \
         TRACE("expected %s found %s",                          \
               YAML_BOOL_TAG,                                   \
               node->tag);                                      \
@@ -185,24 +189,24 @@ MNY_INIT(scope, name)(void *data, yaml_node_t *node)            \
 }                                                              \
 
 
-#define MNY_FINI_BOOL(scope, name, n)                           \
+#define MNY_FINI_BOOL(scope, name, n)                          \
 static int                                                     \
-MNY_FINI(scope, name)(void *data)                               \
+MNY_FINI(scope, name)(void *data)                              \
 {                                                              \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
-/*    TRACE("f=%p v=%p (bool)", MNY_FINI(scope, name), v);      \
+/*    TRACE("f=%p v=%p (bool)", MNY_FINI(scope, name), v);     \
     TRACE("v=%ld (bool)", (intmax_t)*v) */;                    \
     *v = 0;                                                    \
     return 0;                                                  \
 }                                                              \
 
 
-#define MNY_STR_BOOL(scope, name, n)                    \
+#define MNY_STR_BOOL(scope, name, n)                   \
 static ssize_t                                         \
-MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
+MNY_STR(scope, name)(mnbytestream_t *bs, void *data)   \
 {                                                      \
-    MNY_CONFIG_TYPE *root = data;                       \
+    MNY_CONFIG_TYPE *root = data;                      \
     __typeof__(&root->n) v = &root->n;                 \
     return bytestream_nprintf(bs,                      \
                               16,                      \
@@ -217,13 +221,13 @@ MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #define MNY_CMP_DEBUG_BOOL(n)
 #endif
 
-#define MNY_CMP_BOOL(scope, name, n)    \
+#define MNY_CMP_BOOL(scope, name, n)   \
 static int                             \
-MNY_CMP(scope, name)(void *a, void *b)  \
+MNY_CMP(scope, name)(void *a, void *b) \
 {                                      \
-    MNY_CONFIG_TYPE *ra = a;            \
-    MNY_CONFIG_TYPE *rb = b;            \
-    MNY_CMP_DEBUG_BOOL(n)               \
+    MNY_CONFIG_TYPE *ra = a;           \
+    MNY_CONFIG_TYPE *rb = b;           \
+    MNY_CMP_DEBUG_BOOL(n)              \
     return MNCMP(ra->n, rb->n);        \
 }                                      \
 
@@ -231,14 +235,14 @@ MNY_CMP(scope, name)(void *a, void *b)  \
 /*
  * int0
  */
-#define MNY_INIT_INT0(scope, name, ty)                          \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_INT0(scope, name, ty)                         \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     intmax_t v = 0;                                            \
     ty *vv = data;                                             \
     char *ptr, *endptr;                                        \
-    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_INT_TAG,                                    \
               node->tag);                                      \
@@ -249,7 +253,7 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     v = strtoimax(ptr, &endptr, 0);                            \
     if (ptr == endptr) {                                       \
         TRACE("invalid int '%s'", ptr);                        \
-        return MNY_INIT_INVALID;                                \
+        return MNY_INIT_INVALID;                               \
     }                                                          \
     /*TRACE("v=%ld", v); */                                    \
     *vv = (ty)v;                                               \
@@ -257,20 +261,20 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_FINI_INT0(scope, name, ty)                                  \
-static int MNY_FINI(scope, name)(void *data)                            \
-{                                                                      \
-    ty *v = data;                                                      \
-/*    TRACE("v=%p (int0)", v);                                         \
-    TRACE("v=%ld (int0)", (intmax_t)*v); */                            \
-    *v = 0;                                                            \
-    return 0;                                                          \
-}                                                                      \
+#define MNY_FINI_INT0(scope, name, ty)         \
+static int MNY_FINI(scope, name)(void *data)   \
+{                                              \
+    ty *v = data;                              \
+/*    TRACE("v=%p (int0)", v);                 \
+    TRACE("v=%ld (int0)", (intmax_t)*v); */    \
+    *v = 0;                                    \
+    return 0;                                  \
+}                                              \
 
 
-#define MNY_STR_INT0(scope, name, ty)                   \
+#define MNY_STR_INT0(scope, name, ty)                  \
 static ssize_t                                         \
-MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
+MNY_STR(scope, name)(mnbytestream_t *bs, void *data)   \
 {                                                      \
     ty *v = data;                                      \
     return bytestream_nprintf(bs,                      \
@@ -286,13 +290,13 @@ MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #define MNY_CMP_DEBUG_INT0
 #endif
 
-#define MNY_CMP_INT0(scope, name, ty)   \
+#define MNY_CMP_INT0(scope, name, ty)  \
 static int                             \
-MNY_CMP(scope, name)(void *a, void *b)  \
+MNY_CMP(scope, name)(void *a, void *b) \
 {                                      \
     ty *va = a;                        \
     ty *vb = b;                        \
-    MNY_CMP_DEBUG_INT0                  \
+    MNY_CMP_DEBUG_INT0                 \
     return MNCMP(*va, *vb);            \
 }                                      \
 
@@ -300,15 +304,15 @@ MNY_CMP(scope, name)(void *a, void *b)  \
 /*
  * int, enum
  */
-#define MNY_INIT_INT(scope, name, n)                            \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_INT(scope, name, n)                           \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     intmax_t v = 0;                                            \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
-    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_INT_TAG,                                    \
               node->tag);                                      \
@@ -319,7 +323,7 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     v = strtoimax(ptr, &endptr, 0);                            \
     if (ptr == endptr) {                                       \
         TRACE("invalid int '%s'", ptr);                        \
-        return MNY_INIT_INVALID;                                \
+        return MNY_INIT_INVALID;                               \
     }                                                          \
     /*TRACE("v=%ld", v); */                                    \
     *vv = (__typeof__(root->n))v;                              \
@@ -327,15 +331,15 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_INIT_INT_CEHCKRANGE(scope, name, n, a, b)           \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_INT_CHECKRANGE(scope, name, n, a, b)          \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     intmax_t v = 0;                                            \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
-    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_INT_TAG,                                    \
               node->tag);                                      \
@@ -346,14 +350,14 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     v = strtoimax(ptr, &endptr, 0);                            \
     if (ptr == endptr) {                                       \
         TRACE("invalid int '%s'", ptr);                        \
-        return MNY_INIT_INVALID;                                \
+        return MNY_INIT_INVALID;                               \
     }                                                          \
     if ((v < a) || (v > b)) {                                  \
         TRACE("int '%s' is out of range %ld..%ld",             \
               ptr,                                             \
               (intmax_t)a,                                     \
               (intmax_t)b);                                    \
-        return MNY_INIT_INVALID;                                \
+        return MNY_INIT_INVALID;                               \
     }                                                          \
     /*TRACE("v=%ld", v); */                                    \
     *vv = (__typeof__(root->n))v;                              \
@@ -361,15 +365,15 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_INIT_ENUM(scope, name, n, en)                       \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_ENUM(scope, name, n, en)                      \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr;                                                 \
     size_t i;                                                  \
-    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_INT_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_INT_TAG,                                    \
               node->tag);                                      \
@@ -378,7 +382,7 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     /*TRACE("ptr=%s", node->data.scalar.value); */             \
     ptr = (char *)node->data.scalar.value;                     \
     for (i = 0; i < countof(en); ++i) {                        \
-        mny_enum_t *e;                                          \
+        mny_enum_t *e;                                         \
         e = &en[i];                                            \
         if (strcmp(ptr, e->_name) == 0) {                      \
             *vv = (__typeof__(root->n))e->_value;              \
@@ -386,27 +390,27 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
         }                                                      \
     }                                                          \
     TRACE("enumeration is not known: %s", ptr);                \
-    return MNY_INIT_INVALID;                                    \
+    return MNY_INIT_INVALID;                                   \
 }                                                              \
 
 
-#define MNY_FINI_INT(scope, name, n)                                    \
-static int MNY_FINI(scope, name)(void *data)                            \
-{                                                                      \
-    MNY_CONFIG_TYPE *root = data;                                       \
-    __typeof__(&root->n) v = &root->n;                                 \
-/*    TRACE("v=%p (int)", v);                                          \
-    TRACE("v=%ld (int)", (intmax_t)*v) */;                             \
-    *v = 0;                                                            \
-    return 0;                                                          \
-}                                                                      \
+#define MNY_FINI_INT(scope, name, n)           \
+static int MNY_FINI(scope, name)(void *data)   \
+{                                              \
+    MNY_CONFIG_TYPE *root = data;              \
+    __typeof__(&root->n) v = &root->n;         \
+/*    TRACE("v=%p (int)", v);                  \
+    TRACE("v=%ld (int)", (intmax_t)*v) */;     \
+    *v = 0;                                    \
+    return 0;                                  \
+}                                              \
 
 
-#define MNY_STR_INT(scope, name, n)                     \
+#define MNY_STR_INT(scope, name, n)                    \
 static ssize_t                                         \
-MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
+MNY_STR(scope, name)(mnbytestream_t *bs, void *data)   \
 {                                                      \
-    MNY_CONFIG_TYPE *root = data;                       \
+    MNY_CONFIG_TYPE *root = data;                      \
     __typeof__(&root->n) v = &root->n;                 \
     return bytestream_nprintf(bs,                      \
                               32,                      \
@@ -415,15 +419,15 @@ MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 }                                                      \
 
 
-#define MNY_STR_ENUM(scope, name, n, en)                        \
+#define MNY_STR_ENUM(scope, name, n, en)                       \
 static ssize_t                                                 \
-MNY_STR(scope, name)(mnbytestream_t *bs, void *data)              \
+MNY_STR(scope, name)(mnbytestream_t *bs, void *data)           \
 {                                                              \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
     size_t i;                                                  \
     for (i = 0; i < countof(en); ++i) {                        \
-        mny_enum_t *e;                                          \
+        mny_enum_t *e;                                         \
         e = &en[i];                                            \
         if ((int)(*v) == e->_value) {                          \
             return bytestream_nprintf(bs,                      \
@@ -443,13 +447,13 @@ MNY_STR(scope, name)(mnbytestream_t *bs, void *data)              \
 #define MNY_CMP_DEBUG_INT(n)
 #endif
 
-#define MNY_CMP_INT(scope, name, n)     \
+#define MNY_CMP_INT(scope, name, n)    \
 static int                             \
-MNY_CMP(scope, name)(void *a, void *b)  \
+MNY_CMP(scope, name)(void *a, void *b) \
 {                                      \
-    MNY_CONFIG_TYPE *ra = a;            \
-    MNY_CONFIG_TYPE *rb = b;            \
-    MNY_CMP_DEBUG_INT(n)                \
+    MNY_CONFIG_TYPE *ra = a;           \
+    MNY_CONFIG_TYPE *rb = b;           \
+    MNY_CMP_DEBUG_INT(n)               \
     return MNCMP(ra->n, rb->n);        \
 }                                      \
 
@@ -457,15 +461,15 @@ MNY_CMP(scope, name)(void *a, void *b)  \
 /*
  * float
  */
-#define MNY_INIT_FLOAT(scope, name, n)                          \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_FLOAT(scope, name, n)                         \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     double v;                                                  \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
-    if ((res = mny_can_cast_tag(node, YAML_FLOAT_TAG)) != 0) {  \
+    if ((res = mny_can_cast_tag(node, YAML_FLOAT_TAG)) != 0) { \
         TRACE("expected %s found %s",                          \
               YAML_FLOAT_TAG,                                  \
               node->tag);                                      \
@@ -476,7 +480,7 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     v = strtod(ptr, &endptr);                                  \
     if (ptr == endptr) {                                       \
         TRACE("invalid float '%s'", ptr);                      \
-        return MNY_INIT_INVALID;                                \
+        return MNY_INIT_INVALID;                               \
     }                                                          \
     /*TRACE("v=%lf", v); */                                    \
     *vv = (__typeof__(root->n))v;                              \
@@ -484,15 +488,15 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)         \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)        \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     double v;                                                  \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) vv = &root->n;                        \
     char *ptr, *endptr;                                        \
-    if ((res = mny_can_cast_tag(node, YAML_FLOAT_TAG)) != 0) {  \
+    if ((res = mny_can_cast_tag(node, YAML_FLOAT_TAG)) != 0) { \
         TRACE("expected %s found %s",                          \
               YAML_FLOAT_TAG,                                  \
               node->tag);                                      \
@@ -503,14 +507,14 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     v = strtod(ptr, &endptr);                                  \
     if (ptr == endptr) {                                       \
         TRACE("invalid float '%s'", ptr);                      \
-        return MNY_INIT_INVALID;                                \
+        return MNY_INIT_INVALID;                               \
     }                                                          \
     if ((v < a) || (v > b)) {                                  \
         TRACE("float '%s' is out of range %lf..%lf",           \
               ptr,                                             \
               (double)a,                                       \
               (double)b);                                      \
-        return MNY_INIT_INVALID;                                \
+        return MNY_INIT_INVALID;                               \
     }                                                          \
     /*TRACE("v=%lf", v); */                                    \
     *vv = (__typeof__(root->n))v;                              \
@@ -518,23 +522,23 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_FINI_FLOAT(scope, name, n)                                  \
-static int MNY_FINI(scope, name)(void *data)                            \
-{                                                                      \
-    MNY_CONFIG_TYPE *root = data;                                       \
-    __typeof__(&root->n) v = &root->n;                                 \
-/*    TRACE("v=%p (float)", v);                                        \
-    TRACE("v=%lf (float)", (double)*v) */;                             \
-    *v = 0.0;                                                          \
-    return 0;                                                          \
-}                                                                      \
+#define MNY_FINI_FLOAT(scope, name, n)         \
+static int MNY_FINI(scope, name)(void *data)   \
+{                                              \
+    MNY_CONFIG_TYPE *root = data;              \
+    __typeof__(&root->n) v = &root->n;         \
+/*    TRACE("v=%p (float)", v);                \
+    TRACE("v=%lf (float)", (double)*v) */;     \
+    *v = 0.0;                                  \
+    return 0;                                  \
+}                                              \
 
 
-#define MNY_STR_FLOAT(scope, name, n)                   \
+#define MNY_STR_FLOAT(scope, name, n)                  \
 static ssize_t                                         \
-MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
+MNY_STR(scope, name)(mnbytestream_t *bs, void *data)   \
 {                                                      \
-    MNY_CONFIG_TYPE *root = data;                       \
+    MNY_CONFIG_TYPE *root = data;                      \
     __typeof__(&root->n) v = &root->n;                 \
     return bytestream_nprintf(bs,                      \
                               32,                      \
@@ -549,13 +553,13 @@ MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #define MNY_CMP_DEBUG_FLOAT(n)
 #endif
 
-#define MNY_CMP_FLOAT(scope, name, n)   \
+#define MNY_CMP_FLOAT(scope, name, n)  \
 static int                             \
-MNY_CMP(scope, name)(void *a, void *b)  \
+MNY_CMP(scope, name)(void *a, void *b) \
 {                                      \
-    MNY_CONFIG_TYPE *ra = a;            \
-    MNY_CONFIG_TYPE *rb = b;            \
-    MNY_CMP_DEBUG_FLOAT(n)              \
+    MNY_CONFIG_TYPE *ra = a;           \
+    MNY_CONFIG_TYPE *rb = b;           \
+    MNY_CMP_DEBUG_FLOAT(n)             \
     return MNCMP(ra->n, rb->n);        \
 }                                      \
 
@@ -563,13 +567,13 @@ MNY_CMP(scope, name)(void *a, void *b)  \
 /*
  * str0 (mnbytes_t *)
  */
-#define MNY_INIT_STR0(scope, name)                              \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_STR0(scope, name)                             \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
-    mnbytes_t **v = data;                                        \
+    mnbytes_t **v = data;                                      \
     char *ptr;                                                 \
-    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
               node->tag);                                      \
@@ -585,10 +589,10 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_FINI_STR0(scope, name)              \
-static int MNY_FINI(scope, name)(void *data)    \
+#define MNY_FINI_STR0(scope, name)             \
+static int MNY_FINI(scope, name)(void *data)   \
 {                                              \
-    mnbytes_t **v = data;                        \
+    mnbytes_t **v = data;                      \
 /*    TRACE("v=%p (str)", v);                  \
     TRACE("v=%s (str)", BDATA(*v)) */;         \
     BYTES_DECREF(v);                           \
@@ -596,11 +600,11 @@ static int MNY_FINI(scope, name)(void *data)    \
 }                                              \
 
 
-#define MNY_STR_STR0(scope, name)                       \
+#define MNY_STR_STR0(scope, name)                      \
 static ssize_t                                         \
-MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
+MNY_STR(scope, name)(mnbytestream_t *bs, void *data)   \
 {                                                      \
-    mnbytes_t **v = data;                                \
+    mnbytes_t **v = data;                              \
     if (*v == NULL) {                                  \
         return 0;                                      \
     }                                                  \
@@ -618,27 +622,27 @@ MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #endif
 
 
-#define MNY_CMP_STR0(scope, name)       \
+#define MNY_CMP_STR0(scope, name)      \
 static int                             \
-MNY_CMP(scope, name)(void *a, void *b)  \
+MNY_CMP(scope, name)(void *a, void *b) \
 {                                      \
-    mnbytes_t **va = a;                  \
-    mnbytes_t **vb = b;                  \
+    mnbytes_t **va = a;                \
+    mnbytes_t **vb = b;                \
     if (*va == NULL) {                 \
         if (*vb == NULL) {             \
             return 0;                  \
         } else {                       \
-            MNY_CMP_DEBUG_STR0(n, 1)    \
+            MNY_CMP_DEBUG_STR0(n, 1)   \
             return -1;                 \
         }                              \
     } else {                           \
         if (*vb == NULL) {             \
-            MNY_CMP_DEBUG_STR0(n, 1)    \
+            MNY_CMP_DEBUG_STR0(n, 1)   \
             return 1;                  \
         } else {                       \
             int res;                   \
             res = bytes_cmp(*va, *vb); \
-            MNY_CMP_DEBUG_STR0(n, res)  \
+            MNY_CMP_DEBUG_STR0(n, res) \
             return res;                \
         }                              \
     }                                  \
@@ -649,14 +653,14 @@ MNY_CMP(scope, name)(void *a, void *b)  \
 /*
  * str
  */
-#define MNY_INIT_STR(scope, name, n)                            \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_STR(scope, name, n)                           \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr;                                                 \
-    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
               node->tag);                                      \
@@ -672,15 +676,15 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_INIT_STR_CHECKDIRNAME(scope, name, n)               \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_STR_CHECKDIRNAME(scope, name, n)              \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     struct stat sb;                                            \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr, *d;                                             \
-    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
               node->tag);                                      \
@@ -694,17 +698,17 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
         if ((d = dirname(tmp)) == NULL) {                      \
             TRACE("Could not get dirname from %s", ptr);       \
             free(tmp);                                         \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
         if (stat(d, &sb) != 0) {                               \
             TRACE("Could not stat %s", d);                     \
             free(tmp);                                         \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
         if (!S_ISDIR(sb.st_mode)) {                            \
             TRACE("Not a directory %s", d);                    \
             free(tmp);                                         \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
         free(tmp);                                             \
     }                                                          \
@@ -716,16 +720,16 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)    \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)   \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     struct stat sb;                                            \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr, *d;                                             \
     char *tmp;                                                 \
-    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
               node->tag);                                      \
@@ -738,7 +742,7 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
         if ((d = dirname(tmp)) == NULL) {                      \
             TRACE("Could not get dirname from %s", ptr);       \
             free(tmp);                                         \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
         if (stat(d, &sb) == 0) {                               \
             if (S_ISDIR(sb.st_mode)) {                         \
@@ -746,7 +750,7 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
             } else {                                           \
                 TRACE("Not a directory %s", d);                \
                 free(tmp);                                     \
-                return MNY_INIT_INVALID;                        \
+                return MNY_INIT_INVALID;                       \
             }                                                  \
         } else {                                               \
             if (mkdir(d, 0755) == 0) {                         \
@@ -754,7 +758,7 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
             } else {                                           \
                 TRACE("Could not mkdir %s", d);                \
                 free(tmp);                                     \
-                return MNY_INIT_INVALID;                        \
+                return MNY_INIT_INVALID;                       \
             }                                                  \
         }                                                      \
     }                                                          \
@@ -768,15 +772,15 @@ end:                                                           \
 }                                                              \
 
 
-#define MNY_INIT_STR_CHECKFILE(scope, name, n)                  \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_STR_CHECKFILE(scope, name, n)                 \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     struct stat sb;                                            \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr;                                                 \
-    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
               node->tag);                                      \
@@ -787,11 +791,11 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     if (*ptr != '\0') {                                        \
         if (stat(ptr, &sb) != 0) {                             \
             TRACE("Could not stat %s", ptr);                   \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
         if (!S_ISREG(sb.st_mode)) {                            \
             TRACE("Not a regular file %s", ptr);               \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
     }                                                          \
     BYTES_DECREF(v);                                           \
@@ -802,15 +806,15 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_INIT_STR_CHECKDIR(scope, name, n)                   \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_STR_CHECKDIR(scope, name, n)                  \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     struct stat sb;                                            \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr;                                                 \
-    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
               node->tag);                                      \
@@ -821,11 +825,11 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
     if (*ptr != '\0') {                                        \
         if (stat(ptr, &sb) != 0) {                             \
             TRACE("Could not stat %s", ptr);                   \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
         if (!S_ISDIR(sb.st_mode)) {                            \
             TRACE("Not a directory %s", ptr);                  \
-            return MNY_INIT_INVALID;                            \
+            return MNY_INIT_INVALID;                           \
         }                                                      \
     }                                                          \
     BYTES_DECREF(v);                                           \
@@ -836,15 +840,15 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)        \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)       \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
     struct stat sb;                                            \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
     char *ptr;                                                 \
-    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_STR_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_STR_TAG,                                    \
               node->tag);                                      \
@@ -858,14 +862,14 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
                 goto end;                                      \
             } else {                                           \
                 TRACE("Not a directory %s", ptr);              \
-                return MNY_INIT_INVALID;                        \
+                return MNY_INIT_INVALID;                       \
             }                                                  \
         } else {                                               \
             if (mkdir(ptr, 0755) == 0) {                       \
                 goto end;                                      \
             } else {                                           \
                 TRACE("Could not mkdir %s", ptr);              \
-                return MNY_INIT_INVALID;                        \
+                return MNY_INIT_INVALID;                       \
             }                                                  \
         }                                                      \
     }                                                          \
@@ -878,10 +882,10 @@ end:                                                           \
 }                                                              \
 
 
-#define MNY_FINI_STR(scope, name, n)            \
-static int MNY_FINI(scope, name)(void *data)    \
+#define MNY_FINI_STR(scope, name, n)           \
+static int MNY_FINI(scope, name)(void *data)   \
 {                                              \
-    MNY_CONFIG_TYPE *root = data;               \
+    MNY_CONFIG_TYPE *root = data;              \
     __typeof__(&root->n) v = &root->n;         \
 /*    TRACE("v=%p (str)", v);                  \
     TRACE("v=%s (str)", BDATA(*v)) */;         \
@@ -890,11 +894,11 @@ static int MNY_FINI(scope, name)(void *data)    \
 }                                              \
 
 
-#define MNY_STR_STR(scope, name, n)                     \
+#define MNY_STR_STR(scope, name, n)                    \
 static ssize_t                                         \
-MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
+MNY_STR(scope, name)(mnbytestream_t *bs, void *data)   \
 {                                                      \
-    MNY_CONFIG_TYPE *root = data;                       \
+    MNY_CONFIG_TYPE *root = data;                      \
     __typeof__(&root->n) v = &root->n;                 \
     if (*v == NULL) {                                  \
         return 0;                                      \
@@ -913,27 +917,27 @@ MNY_STR(scope, name)(mnbytestream_t *bs, void *data)      \
 #endif
 
 
-#define MNY_CMP_STR(scope, name, n)             \
+#define MNY_CMP_STR(scope, name, n)            \
 static int                                     \
-MNY_CMP(scope, name)(void *a, void *b)          \
+MNY_CMP(scope, name)(void *a, void *b)         \
 {                                              \
-    MNY_CONFIG_TYPE *ra = a;                    \
-    MNY_CONFIG_TYPE *rb = b;                    \
+    MNY_CONFIG_TYPE *ra = a;                   \
+    MNY_CONFIG_TYPE *rb = b;                   \
     if (ra->n == NULL) {                       \
         if (rb->n == NULL) {                   \
             return 0;                          \
         } else {                               \
-            MNY_CMP_DEBUG_STR(n, 1)             \
+            MNY_CMP_DEBUG_STR(n, 1)            \
             return -1;                         \
         }                                      \
     } else {                                   \
         if (rb->n == NULL) {                   \
-            MNY_CMP_DEBUG_STR(n, 1)             \
+            MNY_CMP_DEBUG_STR(n, 1)            \
             return 1;                          \
         } else {                               \
             int res;                           \
             res = bytes_cmp(ra->n, rb->n);     \
-            MNY_CMP_DEBUG_STR(n, res)           \
+            MNY_CMP_DEBUG_STR(n, res)          \
             return res;                        \
         }                                      \
     }                                          \
@@ -944,13 +948,13 @@ MNY_CMP(scope, name)(void *a, void *b)          \
 /*
  * seq
  */
-#define MNY_INIT_SEQ(scope, name, n, sz, init, fini)            \
-static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
+#define MNY_INIT_SEQ(scope, name, n, sz, init, fini)           \
+static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
 {                                                              \
     int res;                                                   \
-    MNY_CONFIG_TYPE *root = data;                               \
+    MNY_CONFIG_TYPE *root = data;                              \
     __typeof__(&root->n) v = &root->n;                         \
-    if ((res = mny_can_cast_tag(node, YAML_SEQ_TAG)) != 0) {    \
+    if ((res = mny_can_cast_tag(node, YAML_SEQ_TAG)) != 0) {   \
         TRACE("expected %s found %s",                          \
               YAML_SEQ_TAG,                                    \
               node->tag);                                      \
@@ -967,10 +971,10 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node) \
 }                                                              \
 
 
-#define MNY_FINI_SEQ(scope, name, n)                                    \
-static int MNY_FINI(scope, name)(void *data)                            \
+#define MNY_FINI_SEQ(scope, name, n)                                   \
+static int MNY_FINI(scope, name)(void *data)                           \
 {                                                                      \
-    MNY_CONFIG_TYPE *root = data;                                       \
+    MNY_CONFIG_TYPE *root = data;                                      \
     __typeof__(&root->n) v = &root->n;                                 \
 /*    TRACE("v=%p init=%p fini=%p (seq)", v, v->init, v->fini); */     \
     array_fini(v);                                                     \
@@ -978,17 +982,17 @@ static int MNY_FINI(scope, name)(void *data)                            \
 }                                                                      \
 
 
-#define MNY_STR_SEQ(scope, name, n)                             \
-static ssize_t                                                 \
-MNY_STR(scope, name)(UNUSED mnbytestream_t *bs, UNUSED void *data)\
-{                                                              \
-    return 0;                                                  \
-}                                                              \
+#define MNY_STR_SEQ(scope, name, n)                                    \
+static ssize_t                                                         \
+MNY_STR(scope, name)(UNUSED mnbytestream_t *bs, UNUSED void *data)     \
+{                                                                      \
+    return 0;                                                          \
+}                                                                      \
 
 
-#define MNY_CMP_SEQ(scope, name, n)                     \
+#define MNY_CMP_SEQ(scope, name, n)                    \
 static int                                             \
-MNY_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
+MNY_CMP(scope, name)(UNUSED void *a, UNUSED void *b)   \
 {                                                      \
     return 0;                                          \
 }                                                      \
@@ -997,33 +1001,33 @@ MNY_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
 /*
  * map
  */
-#define MNY_INIT_MAP(scope, name, n)                                            \
-static int MNY_INIT(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)   \
+#define MNY_INIT_MAP(scope, name, n)                                           \
+static int MNY_INIT(scope, name)(UNUSED void *data, UNUSED yaml_node_t *node)  \
 {                                                                              \
     return 0;                                                                  \
 }                                                                              \
 
 
-#define MNY_FINI_MAP(scope, name, n)                                            \
-static int MNY_FINI(scope, name)(UNUSED void *data)                             \
-{                                                                              \
-/*    TRACE("v=%p (map)", data);                                               \
-    TRACE("(map)") */;                                                         \
-    return 0;                                                                  \
-}                                                                              \
+#define MNY_FINI_MAP(scope, name, n)                   \
+static int MNY_FINI(scope, name)(UNUSED void *data)    \
+{                                                      \
+/*    TRACE("v=%p (map)", data);                       \
+    TRACE("(map)") */;                                 \
+    return 0;                                          \
+}                                                      \
 
 
-#define MNY_STR_MAP(scope, name, n)                             \
-static ssize_t                                                 \
-MNY_STR(scope, name)(UNUSED mnbytestream_t *bs, UNUSED void *data)\
-{                                                              \
-    return 0;                                                  \
-}                                                              \
+#define MNY_STR_MAP(scope, name, n)                                    \
+static ssize_t                                                         \
+MNY_STR(scope, name)(UNUSED mnbytestream_t *bs, UNUSED void *data)     \
+{                                                                      \
+    return 0;                                                          \
+}                                                                      \
 
 
-#define MNY_CMP_MAP(scope, name, n)                     \
+#define MNY_CMP_MAP(scope, name, n)                    \
 static int                                             \
-MNY_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
+MNY_CMP(scope, name)(UNUSED void *a, UNUSED void *b)   \
 {                                                      \
     return 0;                                          \
 }                                                      \
@@ -1032,8 +1036,8 @@ MNY_CMP(scope, name)(UNUSED void *a, UNUSED void *b)    \
 /*
  * pair definitions
  */
-#define MNY_PAIR_TY0(scope, t, name, flags, ...)        \
-UNUSED static mny_node_info_t MNY_NAME(scope, name) = {  \
+#define MNY_PAIR_TY0(scope, t, name, flags, ...)       \
+UNUSED static mny_node_info_t MNY_NAME(scope, name) = {\
     t,                                                 \
     #name,                                             \
     NULL,                                              \
@@ -1046,8 +1050,8 @@ UNUSED static mny_node_info_t MNY_NAME(scope, name) = {  \
 }                                                      \
 
 
-#define MNY_PAIR_EXT(scope, t, name, flags, init, fini, str, cmp, addr, ...)    \
-UNUSED static mny_node_info_t MNY_NAME(scope, name) = {                          \
+#define MNY_PAIR_EXT(scope, t, name, flags, init, fini, str, cmp, addr, ...)   \
+UNUSED static mny_node_info_t MNY_NAME(scope, name) = {                        \
     t,                                                                         \
     #name,                                                                     \
     init,                                                                      \
@@ -1060,201 +1064,201 @@ UNUSED static mny_node_info_t MNY_NAME(scope, name) = {                         
 }                                                                              \
 
 
-#define MNY_PAIR_TY(scope, t, name, flags, ...)         \
-UNUSED static mny_node_info_t MNY_NAME(scope, name) = {  \
+#define MNY_PAIR_TY(scope, t, name, flags, ...)        \
+UNUSED static mny_node_info_t MNY_NAME(scope, name) = {\
     t,                                                 \
     #name,                                             \
-    MNY_INIT(scope, name),                              \
-    MNY_FINI(scope, name),                              \
-    MNY_STR(scope, name),                               \
-    MNY_CMP(scope, name),                               \
-    MNY_ADDR(scope, name),                              \
+    MNY_INIT(scope, name),                             \
+    MNY_FINI(scope, name),                             \
+    MNY_STR(scope, name),                              \
+    MNY_CMP(scope, name),                              \
+    MNY_ADDR(scope, name),                             \
     flags,                                             \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
 
 
-#define MNY_PAIR_TY1(scope, t, name, flags, init, ...)  \
-UNUSED static mny_node_info_t MNY_NAME(scope, name) = {  \
+#define MNY_PAIR_TY1(scope, t, name, flags, init, ...) \
+UNUSED static mny_node_info_t MNY_NAME(scope, name) = {\
     t,                                                 \
     #name,                                             \
     init,                                              \
-    MNY_FINI(scope, name),                              \
-    MNY_STR(scope, name),                               \
-    MNY_CMP(scope, name),                               \
-    MNY_ADDR(scope, name),                              \
+    MNY_FINI(scope, name),                             \
+    MNY_STR(scope, name),                              \
+    MNY_CMP(scope, name),                              \
+    MNY_ADDR(scope, name),                             \
     flags,                                             \
     {__VA_ARGS__, NULL}                                \
 }                                                      \
 
 
-#define MNY_PAIR_NULL(scope, name, flags, init)                 \
-    MNY_PAIR_TY0(scope, YAML_NULL_TAG, name, flags, NULL)       \
+#define MNY_PAIR_NULL(scope, name, flags, init)                \
+    MNY_PAIR_TY0(scope, YAML_NULL_TAG, name, flags, NULL)      \
 
 
-#define MNY_PAIR_BOOL(scope, name, flags, n)            \
-MNY_INIT_BOOL(scope, name, n)                           \
-MNY_FINI_BOOL(scope, name, n)                           \
-MNY_STR_BOOL(scope, name, n)                            \
-MNY_CMP_BOOL(scope, name, n)                            \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_BOOL_TAG, name, flags, NULL)    \
+#define MNY_PAIR_BOOL(scope, name, flags, n)           \
+MNY_INIT_BOOL(scope, name, n)                          \
+MNY_FINI_BOOL(scope, name, n)                          \
+MNY_STR_BOOL(scope, name, n)                           \
+MNY_CMP_BOOL(scope, name, n)                           \
+MNY_ADDR_TY(scope, name, n)                            \
+MNY_PAIR_TY(scope, YAML_BOOL_TAG, name, flags, NULL)   \
 
 
-#define MNY_PAIR_INT0(scope, name, flags, ty)           \
-MNY_INIT_INT0(scope, name, ty)                          \
-MNY_FINI_INT0(scope, name, ty)                          \
-MNY_STR_INT0(scope, name, ty)                           \
-MNY_CMP_INT0(scope, name, ty)                           \
-MNY_ADDR_TY0(scope, name, ty)                           \
-MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)     \
+#define MNY_PAIR_INT0(scope, name, flags, ty)          \
+MNY_INIT_INT0(scope, name, ty)                         \
+MNY_FINI_INT0(scope, name, ty)                         \
+MNY_STR_INT0(scope, name, ty)                          \
+MNY_CMP_INT0(scope, name, ty)                          \
+MNY_ADDR_TY0(scope, name, ty)                          \
+MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)    \
 
 
-#define MNY_PAIR_INT(scope, name, flags, n)             \
-MNY_INIT_INT(scope, name, n)                            \
-MNY_FINI_INT(scope, name, n)                            \
-MNY_STR_INT(scope, name, n)                             \
-MNY_CMP_INT(scope, name, n)                             \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)     \
+#define MNY_PAIR_INT(scope, name, flags, n)            \
+MNY_INIT_INT(scope, name, n)                           \
+MNY_FINI_INT(scope, name, n)                           \
+MNY_STR_INT(scope, name, n)                            \
+MNY_CMP_INT(scope, name, n)                            \
+MNY_ADDR_TY(scope, name, n)                            \
+MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)    \
 
 
-#define MNY_PAIR_INT_CHECKRANGE(scope, name, flags, n, a, b)    \
-MNY_INIT_INT_CHECKRANGE(scope, name, n, a, b)                   \
-MNY_FINI_INT(scope, name, n)                                    \
-MNY_STR_INT(scope, name, n)                                     \
-MNY_CMP_INT(scope, name, n)                                     \
-MNY_ADDR_TY(scope, name, n)                                     \
-MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)             \
+#define MNY_PAIR_INT_CHECKRANGE(scope, name, flags, n, a, b)   \
+MNY_INIT_INT_CHECKRANGE(scope, name, n, a, b)                  \
+MNY_FINI_INT(scope, name, n)                                   \
+MNY_STR_INT(scope, name, n)                                    \
+MNY_CMP_INT(scope, name, n)                                    \
+MNY_ADDR_TY(scope, name, n)                                    \
+MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)            \
 
 
-#define MNY_PAIR_ENUM(scope, name, flags, n, en)        \
-MNY_INIT_ENUM(scope, name, n, en)                       \
-MNY_FINI_INT(scope, name, n)                            \
-MNY_STR_ENUM(scope, name, n, en)                        \
-MNY_CMP_INT(scope, name, n)                             \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)     \
+#define MNY_PAIR_ENUM(scope, name, flags, n, en)       \
+MNY_INIT_ENUM(scope, name, n, en)                      \
+MNY_FINI_INT(scope, name, n)                           \
+MNY_STR_ENUM(scope, name, n, en)                       \
+MNY_CMP_INT(scope, name, n)                            \
+MNY_ADDR_TY(scope, name, n)                            \
+MNY_PAIR_TY(scope, YAML_INT_TAG, name, flags, NULL)    \
 
 
-#define MNY_PAIR_INT_EXT(scope, name, flags, n, init)           \
-MNY_FINI_INT(scope, name, n)                                    \
-MNY_STR_INT(scope, name, n)                                     \
-MNY_CMP_INT(scope, name, n)                                     \
-MNY_ADDR_TY(scope, name, n)                                     \
-MNY_PAIR_TY1(scope, YAML_INT_TAG, name, flags, init, NULL)      \
+#define MNY_PAIR_INT_EXT(scope, name, flags, n, init)          \
+MNY_FINI_INT(scope, name, n)                                   \
+MNY_STR_INT(scope, name, n)                                    \
+MNY_CMP_INT(scope, name, n)                                    \
+MNY_ADDR_TY(scope, name, n)                                    \
+MNY_PAIR_TY1(scope, YAML_INT_TAG, name, flags, init, NULL)     \
 
 
-#define MNY_PAIR_FLOAT(scope, name, flags, n)           \
-MNY_INIT_FLOAT(scope, name, n)                          \
-MNY_FINI_FLOAT(scope, name, n)                          \
-MNY_STR_FLOAT(scope, name, n)                           \
-MNY_CMP_FLOAT(scope, name, n)                           \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_FLOAT_TAG, name, flags, NULL)   \
+#define MNY_PAIR_FLOAT(scope, name, flags, n)          \
+MNY_INIT_FLOAT(scope, name, n)                         \
+MNY_FINI_FLOAT(scope, name, n)                         \
+MNY_STR_FLOAT(scope, name, n)                          \
+MNY_CMP_FLOAT(scope, name, n)                          \
+MNY_ADDR_TY(scope, name, n)                            \
+MNY_PAIR_TY(scope, YAML_FLOAT_TAG, name, flags, NULL)  \
 
 
-#define MNY_PAIR_FLOAT_CHECKRANGE(scope, name, flags, n, a, b)  \
-MNY_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)                 \
-MNY_FINI_FLOAT(scope, name, n)                                  \
-MNY_STR_FLOAT(scope, name, n)                                   \
-MNY_CMP_FLOAT(scope, name, n)                                   \
-MNY_ADDR_TY(scope, name, n)                                     \
-MNY_PAIR_TY(scope, YAML_FLOAT_TAG, name, flags, NULL)           \
+#define MNY_PAIR_FLOAT_CHECKRANGE(scope, name, flags, n, a, b) \
+MNY_INIT_FLOAT_CHECKRANGE(scope, name, n, a, b)                \
+MNY_FINI_FLOAT(scope, name, n)                                 \
+MNY_STR_FLOAT(scope, name, n)                                  \
+MNY_CMP_FLOAT(scope, name, n)                                  \
+MNY_ADDR_TY(scope, name, n)                                    \
+MNY_PAIR_TY(scope, YAML_FLOAT_TAG, name, flags, NULL)          \
 
 
-#define MNY_PAIR_STR0(scope, name, flags)               \
-MNY_INIT_STR0(scope, name)                              \
-MNY_FINI_STR0(scope, name)                              \
-MNY_STR_STR0(scope, name)                               \
-MNY_CMP_STR0(scope, name)                               \
-MNY_ADDR_TY0(scope, name, mnbytes_t *)                    \
-MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
+#define MNY_PAIR_STR0(scope, name, flags)              \
+MNY_INIT_STR0(scope, name)                             \
+MNY_FINI_STR0(scope, name)                             \
+MNY_STR_STR0(scope, name)                              \
+MNY_CMP_STR0(scope, name)                              \
+MNY_ADDR_TY0(scope, name, mnbytes_t *)                 \
+MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)    \
 
 
-#define MNY_PAIR_STR(scope, name, flags, n)             \
-MNY_INIT_STR(scope, name, n)                            \
-MNY_FINI_STR(scope, name, n)                            \
-MNY_STR_STR(scope, name, n)                             \
-MNY_CMP_STR(scope, name, n)                             \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
+#define MNY_PAIR_STR(scope, name, flags, n)            \
+MNY_INIT_STR(scope, name, n)                           \
+MNY_FINI_STR(scope, name, n)                           \
+MNY_STR_STR(scope, name, n)                            \
+MNY_CMP_STR(scope, name, n)                            \
+MNY_ADDR_TY(scope, name, n)                            \
+MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)    \
 
 
-#define MNY_PAIR_STR_CHECKDIRNAME(scope, name, flags, n)\
-MNY_INIT_STR_CHECKDIRNAME(scope, name, n)               \
-MNY_FINI_STR(scope, name, n)                            \
-MNY_STR_STR(scope, name, n)                             \
-MNY_CMP_STR(scope, name, n)                             \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
+#define MNY_PAIR_STR_CHECKDIRNAME(scope, name, flags, n)       \
+MNY_INIT_STR_CHECKDIRNAME(scope, name, n)                      \
+MNY_FINI_STR(scope, name, n)                                   \
+MNY_STR_STR(scope, name, n)                                    \
+MNY_CMP_STR(scope, name, n)                                    \
+MNY_ADDR_TY(scope, name, n)                                    \
+MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)            \
 
 
-#define MNY_PAIR_STR_CHECKDIRNAME_AUTOCREATE(scope, name, flags, n)     \
-MNY_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)                    \
-MNY_FINI_STR(scope, name, n)                                            \
-MNY_STR_STR(scope, name, n)                                             \
-MNY_CMP_STR(scope, name, n)                                             \
-MNY_ADDR_TY(scope, name, n)                                             \
-MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)                     \
+#define MNY_PAIR_STR_CHECKDIRNAME_AUTOCREATE(scope, name, flags, n)    \
+MNY_INIT_STR_CHECKDIRNAME_AUTOCREATE(scope, name, n)                   \
+MNY_FINI_STR(scope, name, n)                                           \
+MNY_STR_STR(scope, name, n)                                            \
+MNY_CMP_STR(scope, name, n)                                            \
+MNY_ADDR_TY(scope, name, n)                                            \
+MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)                    \
 
 
-#define MNY_PAIR_STR_CHECKFILE(scope, name, flags, n)   \
-MNY_INIT_STR_CHECKFILE(scope, name, n)                  \
-MNY_FINI_STR(scope, name, n)                            \
-MNY_STR_STR(scope, name, n)                             \
-MNY_CMP_STR(scope, name, n)                             \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
+#define MNY_PAIR_STR_CHECKFILE(scope, name, flags, n)  \
+MNY_INIT_STR_CHECKFILE(scope, name, n)                 \
+MNY_FINI_STR(scope, name, n)                           \
+MNY_STR_STR(scope, name, n)                            \
+MNY_CMP_STR(scope, name, n)                            \
+MNY_ADDR_TY(scope, name, n)                            \
+MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)    \
 
 
-#define MNY_PAIR_STR_CHECKDIR(scope, name, flags, n)    \
-MNY_INIT_STR_CHECKDIR(scope, name, n)                   \
-MNY_FINI_STR(scope, name, n)                            \
-MNY_STR_STR(scope, name, n)                             \
-MNY_CMP_STR(scope, name, n)                             \
-MNY_ADDR_TY(scope, name, n)                             \
-MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)     \
+#define MNY_PAIR_STR_CHECKDIR(scope, name, flags, n)   \
+MNY_INIT_STR_CHECKDIR(scope, name, n)                  \
+MNY_FINI_STR(scope, name, n)                           \
+MNY_STR_STR(scope, name, n)                            \
+MNY_CMP_STR(scope, name, n)                            \
+MNY_ADDR_TY(scope, name, n)                            \
+MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)    \
 
 
-#define MNY_PAIR_STR_CHECKDIR_AUTOCREATE(scope, name, flags, n) \
-MNY_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)                \
-MNY_FINI_STR(scope, name, n)                                    \
-MNY_STR_STR(scope, name, n)                                     \
-MNY_CMP_STR(scope, name, n)                                     \
-MNY_ADDR_TY(scope, name, n)                                     \
-MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)             \
+#define MNY_PAIR_STR_CHECKDIR_AUTOCREATE(scope, name, flags, n)\
+MNY_INIT_STR_CHECKDIR_AUTOCREATE(scope, name, n)               \
+MNY_FINI_STR(scope, name, n)                                   \
+MNY_STR_STR(scope, name, n)                                    \
+MNY_CMP_STR(scope, name, n)                                    \
+MNY_ADDR_TY(scope, name, n)                                    \
+MNY_PAIR_TY(scope, YAML_STR_TAG, name, flags, NULL)            \
 
 
-#define MNY_PAIR_SEQ(scope, name, flags, n, sz, init, fini, ...)\
-MNY_INIT_SEQ(scope, name, n, sz, init, fini)                    \
-MNY_FINI_SEQ(scope, name, n)                                    \
-MNY_STR_SEQ(scope, name, n)                                     \
-MNY_CMP_SEQ(scope, name, n)                                     \
-MNY_ADDR_TY(scope, name, n)                                     \
-MNY_PAIR_TY(scope, YAML_SEQ_TAG, name, flags, __VA_ARGS__)      \
+#define MNY_PAIR_SEQ(scope, name, flags, n, sz, init, fini, ...)       \
+MNY_INIT_SEQ(scope, name, n, sz, init, fini)                           \
+MNY_FINI_SEQ(scope, name, n)                                           \
+MNY_STR_SEQ(scope, name, n)                                            \
+MNY_CMP_SEQ(scope, name, n)                                            \
+MNY_ADDR_TY(scope, name, n)                                            \
+MNY_PAIR_TY(scope, YAML_SEQ_TAG, name, flags, __VA_ARGS__)             \
 
 
 
-#define MNY_PAIR_TIMESTAMP(scope, name, flags)                  \
-    MNY_PAIR_TY0(scope, YAML_TIMESTAMP_TAG, name, flags, NULL)  \
+#define MNY_PAIR_TIMESTAMP(scope, name, flags)                 \
+    MNY_PAIR_TY0(scope, YAML_TIMESTAMP_TAG, name, flags, NULL) \
 
 
-#define MNY_PAIR_MAP(scope, name, flags, n, ...)                \
-MNY_INIT_MAP(scope, name, n)                                    \
-MNY_FINI_MAP(scope, name, n)                                    \
-MNY_STR_MAP(scope, name, n)                                     \
-MNY_CMP_MAP(scope, name, n)                                     \
-MNY_ADDR_TY(scope, name, n)                                     \
-MNY_PAIR_TY(scope, YAML_MAP_TAG, name, flags, __VA_ARGS__)      \
+#define MNY_PAIR_MAP(scope, name, flags, n, ...)               \
+MNY_INIT_MAP(scope, name, n)                                   \
+MNY_FINI_MAP(scope, name, n)                                   \
+MNY_STR_MAP(scope, name, n)                                    \
+MNY_CMP_MAP(scope, name, n)                                    \
+MNY_ADDR_TY(scope, name, n)                                    \
+MNY_PAIR_TY(scope, YAML_MAP_TAG, name, flags, __VA_ARGS__)     \
 
 
-#define MNY_PAIR_MAP0(scope, name, flags, ...)                  \
-    MNY_PAIR_TY0(scope, YAML_MAP_TAG, name, flags, __VA_ARGS__) \
+#define MNY_PAIR_MAP0(scope, name, flags, ...)                 \
+    MNY_PAIR_TY0(scope, YAML_MAP_TAG, name, flags, __VA_ARGS__)\
 
 
-#define MNY_PAIR_MAP_EXT(scope, name, flags, init, fini, str, cmp, addr, ...)   \
-UNUSED static mny_node_info_t MNY_NAME(scope, name) = {                          \
+#define MNY_PAIR_MAP_EXT(scope, name, flags, init, fini, str, cmp, addr, ...)  \
+UNUSED static mny_node_info_t MNY_NAME(scope, name) = {                        \
     YAML_MAP_TAG,                                                              \
     #name,                                                                     \
     init,                                                                      \
@@ -1269,7 +1273,7 @@ UNUSED static mny_node_info_t MNY_NAME(scope, name) = {                         
 
 
 
-#define MNY_PARSE_INTO(name, ni, ty)                                    \
+#define MNY_PARSE_INTO(name, ni, ty)                                   \
 static int                                                             \
 name ## _doc_cb(yaml_document_t *doc,                                  \
                 yaml_node_t *node,                                     \
@@ -1277,14 +1281,14 @@ name ## _doc_cb(yaml_document_t *doc,                                  \
 {                                                                      \
     int res;                                                           \
     struct {                                                           \
-        mny_node_info_t *ninfo;                                         \
+        mny_node_info_t *ninfo;                                        \
         ty *config;                                                    \
     } *params = udata;                                                 \
     /*                                                                 \
      * top-level node is mapping                                       \
      */                                                                \
     assert(strcmp(params->ninfo->tag, YAML_MAP_TAG) == 0);             \
-    if ((res = mny_traverse_nodes(doc,                                  \
+    if ((res = mny_traverse_nodes(doc,                                 \
                                   params->ninfo,                       \
                                   node,                                \
                                   params->config)) != 0) {             \
@@ -1306,14 +1310,14 @@ name ## _parse_into(ty *co, yaml_read_handler_t cb, void *udata)       \
     yaml_parser_set_input(&p, cb, udata);                              \
     if (yaml_parser_load(&p, &doc)) {                                  \
         struct {                                                       \
-            mny_node_info_t *ninfo;                                     \
+            mny_node_info_t *ninfo;                                    \
             ty *config;                                                \
         } params = { ni, co, };                                        \
                                                                        \
         res = traverse_yaml_document(&doc, name ## _doc_cb, &params);  \
         yaml_document_delete(&doc);                                    \
     } else {                                                           \
-        res = MNY_PARSE_INTO_ERROR;                                     \
+        res = MNY_PARSE_INTO_ERROR;                                    \
         TRACE("error=%s %s: %s (line %ld column %ld)",                 \
               YAML_ERROR_TYPE_STR(p.error),                            \
               p.context,                                               \
@@ -1329,8 +1333,8 @@ name ## _parse_into(ty *co, yaml_read_handler_t cb, void *udata)       \
 
 
 typedef int (*mny_node_traverser_t)(yaml_document_t *,
-                                     yaml_node_t *,
-                                     void *);
+                                    yaml_node_t *,
+                                    void *);
 
 
 int mny_can_cast_tag(yaml_node_t *, char *);
@@ -1344,29 +1348,31 @@ int traverse_yaml_document(yaml_document_t *,
                        mny_node_traverser_t,
                        void *);
 void mny_node_info_traverse_ctx_init(mny_node_info_traverse_ctx_t *,
-                                    const char *,
-                                    const char *,
-                                    const char *,
-                                    const char *);
+                                     const char *,
+                                     const char *,
+                                     const char *,
+                                     const char *);
 void mny_node_info_traverse_ctx_fini(mny_node_info_traverse_ctx_t *);
 
 int mny_node_info_traverse(mny_node_info_traverse_ctx_t *,
-                          mny_node_info_t *,
-                          void *,
-                          mny_node_info_traverser_t,
-                          void *);
-int mny_node_info_traverse2(mny_node_info_traverse_ctx_t *,
                            mny_node_info_t *,
                            void *,
-                           void *,
-                           mny_node_info_traverser2_t,
+                           mny_node_info_traverser_t,
                            void *);
+int mny_node_info_traverse2(mny_node_info_traverse_ctx_t *,
+                            mny_node_info_t *,
+                            void *,
+                            void *,
+                            mny_node_info_traverser2_t,
+                            void *);
 int mny_node_info_cmp_data(mny_node_info_t *, void *, void *);
+
 
 typedef struct _mny_read_params {
     mnbytestream_t bs;
     int fd;
 } mny_read_params_t;
+
 int mny_readfd(void *, unsigned char *, size_t, size_t *);
 int mny_readbs(void *, unsigned char *, size_t, size_t *);
 

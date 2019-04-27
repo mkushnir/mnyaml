@@ -21,10 +21,10 @@
 
 
 static int mny_check_node_subs(yaml_document_t *,
-                              mny_node_info_t *,
-                              yaml_node_t *,
-                              yaml_node_t *,
-                              void *);
+                               mny_node_info_t *,
+                               yaml_node_t *,
+                               yaml_node_t *,
+                               void *);
 
 static int
 mny_name_cmp(const char *a, const char *b, size_t sz)
@@ -91,10 +91,10 @@ dump_yaml_node(yaml_document_t *doc, yaml_node_t *node)
 
 static int
 mny_check_node_subs(yaml_document_t *doc,
-                   mny_node_info_t *ninfo,
-                   yaml_node_t *key,
-                   yaml_node_t *value,
-                   void *data)
+                    mny_node_info_t *ninfo,
+                    yaml_node_t *key,
+                    yaml_node_t *value,
+                    void *data)
 {
     mny_node_info_t **nsub;
     int res;
@@ -348,10 +348,10 @@ mny_node_info_fini_data(mny_node_info_t *ninfo, void *data)
 
 void
 mny_node_info_traverse_ctx_init(mny_node_info_traverse_ctx_t *tctx,
-                               const char *nsep,
-                               const char *sub0,
-                               const char *sub1,
-                               const char *prefix)
+                                const char *nsep,
+                                const char *sub0,
+                                const char *sub1,
+                                const char *prefix)
 {
     assert(prefix != NULL);
     tctx->nsep = nsep;
@@ -370,10 +370,10 @@ mny_node_info_traverse_ctx_fini(mny_node_info_traverse_ctx_t *tctx)
 
 int
 mny_node_info_traverse(mny_node_info_traverse_ctx_t *tctx,
-                      mny_node_info_t *ninfo,
-                      void *data,
-                      mny_node_info_traverser_t cb,
-                      void *udata)
+                       mny_node_info_t *ninfo,
+                       void *data,
+                       mny_node_info_traverser_t cb,
+                       void *udata)
 {
     int res;
     mny_node_info_t **ni;
@@ -489,12 +489,13 @@ mny_node_info_traverse(mny_node_info_traverse_ctx_t *tctx,
 }
 
 
-int mny_node_info_traverse2(mny_node_info_traverse_ctx_t *tctx,
-                           mny_node_info_t *ninfo,
-                           void *a,
-                           void *b,
-                           mny_node_info_traverser2_t cb,
-                           void *udata) {
+int
+mny_node_info_traverse2(mny_node_info_traverse_ctx_t *tctx,
+                        mny_node_info_t *ninfo,
+                        void *a,
+                        void *b,
+                        mny_node_info_traverser2_t cb,
+                        void *udata) {
     int res;
     mny_node_info_t **ni;
 
