@@ -48,7 +48,7 @@ AS_IF([test -n "$USE_GCC"],
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([.ac-aux])
-AC_CONFIG_FILES([Makefile src/Makefile test/Makefile man/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile man/Makefile port/Makefile])
 AC_CONFIG_HEADERS(config.h)
 
 AC_CANONICAL_HOST
@@ -118,7 +118,7 @@ AM_CONDITIONAL([LINUX], [echo $build_os | grep linux >/dev/null])
 AM_CONDITIONAL([FREEBSD], [echo $build_os | grep freebsd >/dev/null])
 
 #dnl pass LDFLAGS=-L${LOCALBASE}/lib in the environment
-AC_CHECK_LIB(mrkcommon, _fini, [], [AC_MSG_FAILURE(libmrkcommon.so is required. Please find it at git@github.com:mkushnir/mrkcommon.git)])
+#AC_CHECK_LIB(mrkcommon, _fini, [], [AC_MSG_FAILURE(libmrkcommon.so is required. Please find it at git@github.com:mkushnir/mrkcommon.git)])
 #AC_CHECK_LIB(yaml, _fini, [], [AC_MSG_FAILURE(libyaml.so is required.)])
 
 AC_OUTPUT
