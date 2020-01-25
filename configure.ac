@@ -1,4 +1,4 @@
-AC_INIT(mrkyaml, 0.1, markiyan.kushnir@gmail.com, mrkyaml, https://github.com/mkushnir)
+AC_INIT(mnyaml, 0.1, markiyan.kushnir@gmail.com, mnyaml, https://github.com/mkushnir)
 
 AS_IF([test -n "$USE_GCC"],
 [
@@ -118,7 +118,7 @@ AM_CONDITIONAL([LINUX], [echo $build_os | grep linux >/dev/null])
 AM_CONDITIONAL([FREEBSD], [echo $build_os | grep freebsd >/dev/null])
 
 #dnl pass LDFLAGS=-L${LOCALBASE}/lib in the environment
-#AC_CHECK_LIB(mrkcommon, _fini, [], [AC_MSG_FAILURE(libmrkcommon.so is required. Please find it at git@github.com:mkushnir/mrkcommon.git)])
+#AC_CHECK_LIB(mncommon, _fini, [], [AC_MSG_FAILURE(libmncommon.so is required. Please find it at git@github.com:mkushnir/mncommon.git)])
 #AC_CHECK_LIB(yaml, _fini, [], [AC_MSG_FAILURE(libyaml.so is required.)])
 
 AC_OUTPUT

@@ -13,14 +13,14 @@ CLEANFILES = $(BUILT_SOURCES) *.core core
 #CLEANFILES += *.in
 AM_MAKEFLAGS = -s
 
-lib_LTLIBRARIES = libmrkyaml.la
+lib_LTLIBRARIES = libmnyaml.la
 
-nobase_include_HEADERS = mrkyaml.h
+nobase_include_HEADERS = mnyaml.h
 
 noinst_HEADERS =
 
-libmrkyaml_la_SOURCES = mrkyaml.c
-nodist_libmrkyaml_la_SOURCES = diag.c
+libmnyaml_la_SOURCES = mnyaml.c
+nodist_libmnyaml_la_SOURCES = diag.c
 
 DEBUG_LD_FLAGS =
 if DEBUG
@@ -35,19 +35,19 @@ endif
 endif
 
 if ALLSTATIC
-libmrkyaml_la_LDFLAGS = -all-static
+libmnyaml_la_LDFLAGS = -all-static
 else
-libmrkyaml_la_LDFLAGS =
+libmnyaml_la_LDFLAGS =
 endif
 
-libmrkyaml_la_CFLAGS = $(DEBUG_CC_FLAGS) -Wall -Wextra -Werror -std=c99 @_GNU_SOURCE_MACRO@ @_XOPEN_SOURCE_MACRO@ -I$(top_srcdir)/src -I$(top_srcdir) -I$(includedir)
-libmrkyaml_la_LDFLAGS += $(DEBUG_LD_FLAGS) -version-info 0:0:0 -L$(libdir)
-libmrkyaml_la_LIBADD = -lmrkcommon -lmndiag -lyaml
+libmnyaml_la_CFLAGS = $(DEBUG_CC_FLAGS) -Wall -Wextra -Werror -std=c99 @_GNU_SOURCE_MACRO@ @_XOPEN_SOURCE_MACRO@ -I$(top_srcdir)/src -I$(top_srcdir) -I$(includedir)
+libmnyaml_la_LDFLAGS += $(DEBUG_LD_FLAGS) -version-info 0:0:0 -L$(libdir)
+libmnyaml_la_LIBADD = -lmncommon -lmndiag -lyaml
 
 SUBDIRS = .
 
 diag.c diag.h: $(diags)
-	$(AM_V_GEN) cat $(diags) | sort -u >diag.txt.tmp && mndiagen -v -S diag.txt.tmp -L mrkyaml -H diag.h -C diag.c *.[ch]
+	$(AM_V_GEN) cat $(diags) | sort -u >diag.txt.tmp && mndiagen -v -S diag.txt.tmp -L mnyaml -H diag.h -C diag.c *.[ch]
 
 run: all
 	for i in $(bin_PROGRAMS); do if test -x ./$$i; then LD_LIBRARY_PATH=$(libdir) ./$$i; fi; done;

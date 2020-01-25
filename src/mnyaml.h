@@ -1,5 +1,5 @@
-#ifndef MRKYAML_H_DEFINED
-#define MRKYAML_H_DEFINED
+#ifndef MNYAML_H_DEFINED
+#define MNYAML_H_DEFINED
 
 /*
  * https://yaml.org/type/
@@ -8,11 +8,11 @@
 #include <libgen.h>
 #include <yaml.h>
 
-#include <mrkcommon/array.h>
-#include <mrkcommon/bytes.h>
-#include <mrkcommon/bytestream.h>
-#include <mrkcommon/dumpm.h>
-#include <mrkcommon/util.h>
+#include <mncommon/array.h>
+#include <mncommon/bytes.h>
+#include <mncommon/bytestream.h>
+#include <mncommon/dumpm.h>
+#include <mncommon/util.h>
 
 #define YAML_TOKEN_TYPE_STR(ty)                                                \
 ((ty) == YAML_NO_TOKEN ? "NO_TOKEN" :                                          \
@@ -1379,4 +1379,4 @@ int mny_readbs(void *, unsigned char *, size_t, size_t *);
 #ifdef __cplusplus
 }
 #endif
-#endif /* MRKYAML_H_DEFINED */
+#endif /* MNYAML_H_DEFINED */

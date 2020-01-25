@@ -16,7 +16,7 @@ diags = ../src/diag.txt diag.txt
 BUILT_SOURCES = diag.c diag.h
 EXTRA_DIST = diag.txt runscripts
 
-noinst_HEADERS = unittest.h ../src/mrkyaml.h
+noinst_HEADERS = unittest.h ../src/mnyaml.h
 
 DEBUG_LD_FLAGS =
 if DEBUG
@@ -40,10 +40,10 @@ nodist_testfoo_SOURCES = diag.c
 testfoo_SOURCES = testfoo.c
 testfoo_CFLAGS = $(DEBUG_FLAGS) -Wall -Wextra -Werror -std=c99 @_GNU_SOURCE_MACRO@ @_XOPEN_SOURCE_MACRO@ -I$(top_srcdir)/test -I$(top_srcdir)/src -I$(top_srcdir) -I$(includedir)
 testfoo_LDFLAGS += $(DEBUG_LD_FLAGS) -L$(top_srcdir)/src/.libs -L$(libdir)
-testfoo_LDADD = -lmrkyaml -lmrkcommon -lmndiag
+testfoo_LDADD = -lmnyaml -lmncommon -lmndiag
 
 diag.c diag.h: $(diags)
-	$(AM_V_GEN) cat $(diags) | sort -u >diag.txt.tmp && mndiagen -v -S diag.txt.tmp -L mrkyaml -H diag.h -C diag.c ../*.[ch] ./*.[ch]
+	$(AM_V_GEN) cat $(diags) | sort -u >diag.txt.tmp && mndiagen -v -S diag.txt.tmp -L mnyaml -H diag.h -C diag.c ../*.[ch] ./*.[ch]
 
 testrun: all
 	for i in $(noinst_PROGRAMS); do if test -x ./$$i; then LD_LIBRARY_PATH=$(libdir) ./$$i; fi; done;

@@ -21,5 +21,5 @@ Some useful features of the library:
 
 
 The library is based on the C structures and algorithms collection
-[mrkcommon](http://github.com/mkushnir/mrkcommon).
+[mncommon](http://github.com/mkushnir/mncommon).
 
