@@ -965,8 +965,8 @@ static int MNY_INIT(scope, name)(void *data, yaml_node_t *node)\
     array_init(v,                                              \
                sz,                                             \
                0,                                              \
-               (array_initializer_t)init,                      \
-               (array_finalizer_t)fini);                       \
+               init,                                           \
+               fini);                                          \
     return 0;                                                  \
 }                                                              \
 

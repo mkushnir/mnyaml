@@ -36,8 +36,9 @@ MNY_PAIR_MAP0(, _si, 0,
 
 
 static int
-si_init(si_t *si)
+si_init(void *o)
 {
+    si_t *si = o;
     //TRACE("si=%p", si);
     si->abc = -1;
     si->bcd = -2;
@@ -46,7 +47,7 @@ si_init(si_t *si)
 
 
 static int
-si_fini(UNUSED si_t *si)
+si_fini(UNUSED void *o)
 {
     //TRACE("si=%p abc=%d bcd=%d", si, si->abc, si->bcd);
     return 0;
@@ -77,16 +78,18 @@ typedef struct {
 
 
 static int
-zxc_item_init(int *i)
+zxc_item_init(void *o)
 {
+    int *i = o;
     *i = 0;
     //TRACE();
     return 0;
 }
 
 static int
-zxc_item_fini(int *i)
+zxc_item_fini(void *o)
 {
+    int *i = o;
     //TRACE("v=%d", *i);
     *i = 0;
     return 0;
@@ -98,13 +101,13 @@ myconfig_init(myconfig_t *config)
     array_init(&config->engine.input.vbn.sources,
                sizeof(si_t),
                0,
-               (array_initializer_t)si_init,
-               (array_finalizer_t)si_fini);
+               si_init,
+               si_fini);
     array_init(&config->engine.input.zxc,
                sizeof(int),
                0,
-               (array_initializer_t)zxc_item_init,
-               (array_finalizer_t)zxc_item_fini);
+               zxc_item_init,
+               zxc_item_fini);
 }
 
 
